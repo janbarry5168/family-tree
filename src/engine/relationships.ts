@@ -106,73 +106,6 @@ function findRelationshipPath(
   return null;
 }
 
-// English name tokens that unambiguously indicate gender. Used ONLY as a last-resort
-// bridge until the Person data model is extended with an explicit `gender` field.
-// Leaf nodes (no children, no spouse) cannot be structurally gendered — their name
-// is the only available signal in the current data model.
-const FEMALE_NAME_TOKENS = new Set([
-  "woman", "girl", "lady", "female",
-  "mother", "mom", "mama", "mum",
-  "grandmother", "grandma", "gran", "nana",
-  "sister", "sis",
-  "aunt", "auntie",
-  "daughter",
-  "wife", "widow",
-  "niece",
-]);
-
-const MALE_NAME_TOKENS = new Set([
-  "man", "boy", "male",
-  "father", "dad", "papa",
-  "grandfather", "grandpa", "grandad",
-  "brother", "bro",
-  "uncle",
-  "son",
-  "husband",
-  "nephew",
-]);
-
-function nameTokenGender(name: string): Gender {
-  const tokens = name.toLowerCase().split(/[\s\-_]+/);
-  for (const token of tokens) {
-    if (FEMALE_NAME_TOKENS.has(token)) return "female";
-    if (MALE_NAME_TOKENS.has(token)) return "male";
-  }
-  return "unknown";
-}
-
-// Resolves gender via four signals in priority order:
-// 1. father/mother reference scan (inferGender)
-// 2. person's own spouse field (spouse-symmetry)
-// 3. reverse spouse scan: anyone listing this person as their spouse
-// 4. name-token heuristic — last resort bridge until an explicit `gender` field
-//    is added to Person. Unreliable for gender-ambiguous given names.
-function resolveGenderFromContext(
-  targetId: string,
-  _focusedId: string,
-  persons: Person[]
-): Gender {
-  const structural = resolveGender(targetId, persons);
-  if (structural !== "unknown") return structural;
-
-  // Reverse spouse scan
-  const reverseSpouse = persons.find((p) => p.spouse === targetId);
-  if (reverseSpouse) {
-    const rsGender = resolveGender(reverseSpouse.id, persons);
-    if (rsGender === "male") return "female";
-    if (rsGender === "female") return "male";
-  }
-
-  // Name-token heuristic
-  const targetPerson = persons.find((p) => p.id === targetId);
-  if (targetPerson) {
-    const nameGender = nameTokenGender(targetPerson.name);
-    if (nameGender !== "unknown") return nameGender;
-  }
-
-  return "unknown";
-}
-
 export function getRelationshipLabel(
   focusedId: string,
   targetId: string,
@@ -183,7 +116,7 @@ export function getRelationshipLabel(
   const path = findRelationshipPath(focusedId, targetId, persons);
   if (!path) return { en: "Relative", zhTW: "親戚" };
 
-  const targetGender = resolveGenderFromContext(targetId, focusedId, persons);
+  const targetGender = resolveGender(targetId, persons);
   const focusedPerson = persons.find((p) => p.id === focusedId)!;
   const targetPerson = persons.find((p) => p.id === targetId)!;
   const key = path.join(",");

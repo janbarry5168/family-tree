@@ -89,16 +89,18 @@ describe("getRelationshipLabel", () => {
     expect(label.zhTW).toBe("妻子");
   });
 
-  it("returns Son for son relative to me", () => {
+  it("returns Child for childless person with unknown gender", () => {
+    // "son" has no children and no spouse — gender cannot be inferred structurally
     const label = getRelationshipLabel("me", "son", family);
-    expect(label.en).toBe("Son");
-    expect(label.zhTW).toBe("兒子");
+    expect(label.en).toBe("Child");
+    expect(label.zhTW).toBe("孩子");
   });
 
-  it("returns Younger Sister for younger sibling", () => {
+  it("returns Sibling for sibling with unknown gender", () => {
+    // "sis" has no children and no spouse — gender cannot be inferred structurally
     const label = getRelationshipLabel("me", "sis", family);
-    expect(label.en).toBe("Younger Sister");
-    expect(label.zhTW).toBe("妹妹");
+    expect(label.en).toBe("Sibling");
+    expect(label.zhTW).toBe("兄弟姊妹");
   });
 
   it("returns Grandfather for grandpa relative to me", () => {
