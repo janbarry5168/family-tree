@@ -3,6 +3,8 @@ import { useFamilyTree } from "../context/FamilyTreeContext";
 import { computeKinshipDegrees } from "../engine/kinship";
 import { computeLayout } from "../engine/layout";
 import { useD3Zoom } from "../hooks/useD3Zoom";
+import PersonNode from "./PersonNode";
+import ConnectionLines from "./ConnectionLines";
 
 export default function TreeCanvas() {
   const { state, dispatch } = useFamilyTree();
@@ -55,37 +57,13 @@ export default function TreeCanvas() {
         </filter>
       </defs>
       <g className="zoom-group">
-        {/* ConnectionLines and PersonNodes will be added in Task 11 */}
+        <ConnectionLines layoutNodes={layoutNodes} persons={persons} personById={personById} />
         {layoutNodes.map((node) => {
           const person = personById.get(node.id);
           if (!person) return null;
           return (
-            <g
-              key={node.id}
-              transform={`translate(${node.x - 70}, ${node.y - 36})`}
-              onClick={() => handleNodeClick(node.id)}
-              style={{ cursor: "pointer" }}
-            >
-              <rect
-                width={140}
-                height={72}
-                rx={8}
-                fill={node.nodeType === "focused" ? "#2e1065" : "#1e293b"}
-                stroke={
-                  node.nodeType === "focused" ? "#a78bfa" :
-                  node.nodeType === "spouse" ? "#f59e0b" :
-                  node.nodeType === "ghost" ? "#475569" : "#3b82f6"
-                }
-                strokeWidth={node.nodeType === "focused" ? 2.5 : 1.5}
-                strokeDasharray={node.nodeType === "ghost" ? "4 4" : "none"}
-              />
-              <text x={12} y={30} fill="#e2e8f0" fontSize={13} fontWeight={600}>
-                {person.name}
-              </text>
-              <text x={12} y={50} fill="#94a3b8" fontSize={10}>
-                {node.nodeType === "ghost" ? "?" : `Degree: ${node.degree}`}
-              </text>
-            </g>
+            <PersonNode key={node.id} node={node} person={person}
+              focusedId={focusedPersonId} persons={persons} onClick={handleNodeClick} />
           );
         })}
       </g>
