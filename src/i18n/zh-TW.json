@@ -1,0 +1,53 @@
+{
+  "app": {
+    "title": "家族樹視覺化工具",
+    "tagline": "視覺化你的家族關係"
+  },
+  "landing": {
+    "tryDemo": "試用範例",
+    "uploadData": "上傳你的資料",
+    "instructions": "上傳包含家族資料的 JSON 檔案即可開始。",
+    "downloadTemplate": "下載 JSON 範本"
+  },
+  "toolbar": {
+    "degree": "親等",
+    "search": "搜尋成員...",
+    "editData": "編輯資料",
+    "exportJson": "匯出 JSON",
+    "uploadNew": "上傳新資料"
+  },
+  "editor": {
+    "title": "編輯家族資料",
+    "personList": "成員列表",
+    "addPerson": "新增成員",
+    "deletePerson": "刪除",
+    "confirmDelete": "確定要刪除這位成員嗎？相關引用將會一併清除。",
+    "name": "姓名",
+    "birthYear": "出生年",
+    "birthOrder": "排行",
+    "father": "父親",
+    "mother": "母親",
+    "spouse": "配偶",
+    "photo": "照片網址",
+    "none": "（無）"
+  },
+  "info": {
+    "title": "成員詳細資訊",
+    "birthYear": "出生年",
+    "relationship": "關係"
+  },
+  "validation": {
+    "invalidJson": "JSON 格式錯誤",
+    "notArray": "資料必須為陣列",
+    "errors": "錯誤",
+    "warnings": "警告"
+  },
+  "session": {
+    "restorePrompt": "找到先前的作業資料，是否要還原？",
+    "restore": "還原",
+    "discard": "捨棄"
+  },
+  "tree": {
+    "disconnectedNotice": "{{count}} 位成員未連接至家族樹"
+  }
+}

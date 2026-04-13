@@ -1,0 +1,53 @@
+{
+  "app": {
+    "title": "Family Tree Visualizer",
+    "tagline": "Visualize your family connections"
+  },
+  "landing": {
+    "tryDemo": "Try Demo",
+    "uploadData": "Upload Your Data",
+    "instructions": "Upload a JSON file with your family data to get started.",
+    "downloadTemplate": "Download JSON template"
+  },
+  "toolbar": {
+    "degree": "Kinship Degree",
+    "search": "Search person...",
+    "editData": "Edit Data",
+    "exportJson": "Export JSON",
+    "uploadNew": "Upload New"
+  },
+  "editor": {
+    "title": "Edit Family Data",
+    "personList": "People",
+    "addPerson": "Add Person",
+    "deletePerson": "Delete",
+    "confirmDelete": "Delete this person? References will be cleaned up.",
+    "name": "Name",
+    "birthYear": "Birth Year",
+    "birthOrder": "Birth Order",
+    "father": "Father",
+    "mother": "Mother",
+    "spouse": "Spouse",
+    "photo": "Photo URL",
+    "none": "(None)"
+  },
+  "info": {
+    "title": "Person Details",
+    "birthYear": "Birth Year",
+    "relationship": "Relationship"
+  },
+  "validation": {
+    "invalidJson": "Invalid JSON format",
+    "notArray": "Data must be an array",
+    "errors": "Errors",
+    "warnings": "Warnings"
+  },
+  "session": {
+    "restorePrompt": "Previous session data found. Restore it?",
+    "restore": "Restore",
+    "discard": "Discard"
+  },
+  "tree": {
+    "disconnectedNotice": "{{count}} person(s) not connected to the tree"
+  }
+}
