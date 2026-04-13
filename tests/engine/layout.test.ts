@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { computeLayout } from "../../src/engine/layout";
-import type { Person, LayoutNode } from "../../src/types/person";
+import type { Person } from "../../src/types/person";
 
 const makePerson = (overrides: Partial<Person> = {}): Person => ({
   id: "1",
