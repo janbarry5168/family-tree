@@ -73,7 +73,7 @@ export default function TreeCanvas() {
         </filter>
       </defs>
       <g className="zoom-group">
-        <ConnectionLines layoutNodes={layoutNodes} persons={persons} personById={personById} />
+        <ConnectionLines layoutNodes={layoutNodes} personById={personById} />
         {layoutNodes.map((node) => {
           const person = personById.get(node.id);
           if (!person) return null;

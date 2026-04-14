@@ -117,12 +117,11 @@ export function FamilyTreeProvider({ children }: { children: ReactNode }) {
           persons: state.persons,
           focusedPersonId: state.focusedPersonId,
           degreeFilter: state.degreeFilter,
-          hiddenLabels: state.hiddenLabels,
         })
       );
     }, AUTO_SAVE_INTERVAL);
     return () => clearInterval(interval);
-  }, [state.persons, state.focusedPersonId, state.degreeFilter, state.hiddenLabels]);
+  }, [state.persons, state.focusedPersonId, state.degreeFilter]);
 
   return (
     <FamilyTreeContext.Provider value={{ state, dispatch }}>

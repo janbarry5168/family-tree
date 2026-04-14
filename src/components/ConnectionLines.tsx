@@ -3,11 +3,10 @@ import type { LayoutNode, Person } from "../types/person";
 
 interface Props {
   layoutNodes: LayoutNode[];
-  persons: Person[];
   personById: Map<string, Person>;
 }
 
-export default function ConnectionLines({ layoutNodes, persons: _persons, personById }: Props) {
+export default function ConnectionLines({ layoutNodes, personById }: Props) {
   const nodeMap = new Map(layoutNodes.map((n) => [n.id, n]));
   const lines: ReactElement[] = [];
 
