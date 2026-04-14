@@ -41,6 +41,9 @@ function resolveGender(personId: string, persons: Person[]): Gender {
   const person = persons.find((p) => p.id === personId);
   if (!person) return "unknown";
 
+  // Explicit gender field takes precedence
+  if (person.gender) return person.gender;
+
   // Structural inference
   const structural = inferGender(personId, persons);
   if (structural !== "unknown") return structural;

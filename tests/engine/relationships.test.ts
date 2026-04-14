@@ -26,8 +26,8 @@ const family: Person[] = [
   makePerson({ id: "mom", name: "Mom", spouse: "dad" }),
   makePerson({ id: "me", name: "Me", father: "dad", mother: "mom", spouse: "wife", birthOrder: 1 }),
   makePerson({ id: "wife", name: "Wife", father: "fil", mother: "mil", spouse: "me" }),
-  makePerson({ id: "sis", name: "Sister", father: "dad", mother: "mom", birthOrder: 2 }),
-  makePerson({ id: "son", name: "Son", father: "me", mother: "wife", birthOrder: 1 }),
+  makePerson({ id: "sis", name: "Sister", father: "dad", mother: "mom", birthOrder: 2, gender: "female" }),
+  makePerson({ id: "son", name: "Son", father: "me", mother: "wife", birthOrder: 1, gender: "male" }),
   makePerson({ id: "fil", name: "Father-in-law", spouse: "mil" }),
   makePerson({ id: "mil", name: "Mother-in-law", spouse: "fil" }),
 ];
@@ -89,18 +89,16 @@ describe("getRelationshipLabel", () => {
     expect(label.zhTW).toBe("妻子");
   });
 
-  it("returns Child for childless person with unknown gender", () => {
-    // "son" has no children and no spouse — gender cannot be inferred structurally
+  it("returns Son for child with explicit male gender", () => {
     const label = getRelationshipLabel("me", "son", family);
-    expect(label.en).toBe("Child");
-    expect(label.zhTW).toBe("孩子");
+    expect(label.en).toBe("Son");
+    expect(label.zhTW).toBe("兒子");
   });
 
-  it("returns Sibling for sibling with unknown gender", () => {
-    // "sis" has no children and no spouse — gender cannot be inferred structurally
+  it("returns Younger Sister for sibling with explicit female gender", () => {
     const label = getRelationshipLabel("me", "sis", family);
-    expect(label.en).toBe("Sibling");
-    expect(label.zhTW).toBe("兄弟姊妹");
+    expect(label.en).toBe("Younger Sister");
+    expect(label.zhTW).toBe("妹妹");
   });
 
   it("returns Grandfather for grandpa relative to me", () => {

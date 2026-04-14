@@ -28,6 +28,10 @@
     "father": "父親",
     "mother": "母親",
     "spouse": "配偶",
+    "gender": "性別",
+    "genderMale": "男",
+    "genderFemale": "女",
+    "genderUnspecified": "未指定",
     "photo": "照片網址",
     "none": "（無）"
   },

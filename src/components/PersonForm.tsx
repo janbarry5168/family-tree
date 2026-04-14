@@ -17,10 +17,17 @@ export default function PersonForm({ person, onClose }: Props) {
     setForm(person);
   }, [person]);
 
-  const update = (field: keyof Person, value: string | number) => {
-    const updated = { ...form, [field]: value };
-    setForm(updated);
-    dispatch({ type: "UPDATE_PERSON", person: updated });
+  const update = (field: keyof Person, value: string | number | undefined) => {
+    if (value === undefined) {
+      const { [field]: _, ...rest } = form;
+      const updated = rest as Person;
+      setForm(updated);
+      dispatch({ type: "UPDATE_PERSON", person: updated });
+    } else {
+      const updated = { ...form, [field]: value };
+      setForm(updated);
+      dispatch({ type: "UPDATE_PERSON", person: updated });
+    }
   };
 
   const handleDelete = () => {
@@ -51,6 +58,16 @@ export default function PersonForm({ person, onClose }: Props) {
           <input type="number" min={1} value={form.birthOrder} onChange={(e) => update("birthOrder", Number(e.target.value) || 1)}
             className="w-full px-2 py-1.5 text-sm rounded bg-slate-800 border border-slate-600 text-slate-200 focus:border-purple-500 focus:outline-none" />
         </div>
+      </div>
+
+      <div>
+        <label className="block text-xs text-slate-400 mb-1">{t("editor.gender")}</label>
+        <select value={form.gender ?? ""} onChange={(e) => update("gender", e.target.value === "" ? undefined : e.target.value)}
+          className="w-full px-2 py-1.5 text-sm rounded bg-slate-800 border border-slate-600 text-slate-200 focus:border-purple-500 focus:outline-none">
+          <option value="">{t("editor.genderUnspecified")}</option>
+          <option value="male">{t("editor.genderMale")}</option>
+          <option value="female">{t("editor.genderFemale")}</option>
+        </select>
       </div>
 
       {(["father", "mother", "spouse"] as const).map((field) => (

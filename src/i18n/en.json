@@ -28,6 +28,10 @@
     "father": "Father",
     "mother": "Mother",
     "spouse": "Spouse",
+    "gender": "Gender",
+    "genderMale": "Male",
+    "genderFemale": "Female",
+    "genderUnspecified": "Unspecified",
     "photo": "Photo URL",
     "none": "(None)"
   },

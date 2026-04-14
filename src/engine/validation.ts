@@ -3,7 +3,7 @@ import type { Person, ValidationResult } from "../types/person";
 const REQUIRED_FIELDS: (keyof Person)[] = ["id", "name", "birthOrder"];
 
 function normalizePerson(raw: Record<string, unknown>): Person {
-  return {
+  const person: Person = {
     id: String(raw.id ?? ""),
     name: String(raw.name ?? ""),
     father: String(raw.father ?? ""),
@@ -13,6 +13,10 @@ function normalizePerson(raw: Record<string, unknown>): Person {
     birthYear: Number(raw.birthYear ?? 0),
     photo: String(raw.photo ?? ""),
   };
+  if (raw.gender === "male" || raw.gender === "female") {
+    person.gender = raw.gender;
+  }
+  return person;
 }
 
 function checkRequiredFields(raw: Record<string, unknown>[], errors: string[]): boolean {
