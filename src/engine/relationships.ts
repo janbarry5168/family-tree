@@ -309,6 +309,61 @@ export function getRelationshipLabel(
       if (focusedGender === "male" && targetGender === "male") return { en: "Brother-in-law", zhTW: "連襟" };
       return { en: "In-law", zhTW: "姻親" };
     }
+
+    // Cousins (parent's sibling's child)
+    if ((edges[0] === "father" || edges[0] === "mother") && edges[1] === "sibling" && edges[2] === "child") {
+      const uncleAuntGender = resolveGender(personIds[2], persons);
+      const elder = isElderThan(targetId, focusedId, persons);
+
+      // Paternal uncle's children → 堂; all others → 表
+      const isTang = edges[0] === "father" && uncleAuntGender === "male";
+      const prefix = isTang ? "堂" : "表";
+
+      if (targetGender === "male") {
+        return elder
+          ? { en: "Cousin", zhTW: `${prefix}兄` }
+          : { en: "Cousin", zhTW: `${prefix}弟` };
+      }
+      if (targetGender === "female") {
+        return elder
+          ? { en: "Cousin", zhTW: `${prefix}姊` }
+          : { en: "Cousin", zhTW: `${prefix}妹` };
+      }
+      return { en: "Cousin", zhTW: `${prefix}親` };
+    }
+
+    // Great-grandparents (3-hop ancestor)
+    if ((edges[0] === "father" || edges[0] === "mother") &&
+        (edges[1] === "father" || edges[1] === "mother") &&
+        (edges[2] === "father" || edges[2] === "mother")) {
+      if (edges[0] === "father") {
+        // Paternal great-grandparent
+        if (edges[1] === "father" && edges[2] === "father") return { en: "Great-grandfather", zhTW: "曾祖父" };
+        if (edges[1] === "father" && edges[2] === "mother") return { en: "Great-grandmother", zhTW: "曾祖母" };
+        // Other paternal combos (father,mother,father / father,mother,mother)
+        if (targetGender === "male" || edges[2] === "father") return { en: "Great-grandfather", zhTW: "曾祖父" };
+        return { en: "Great-grandmother", zhTW: "曾祖母" };
+      } else {
+        // Maternal great-grandparent
+        if (targetGender === "male" || edges[2] === "father") return { en: "Great-grandfather", zhTW: "外曾祖父" };
+        return { en: "Great-grandmother", zhTW: "外曾祖母" };
+      }
+    }
+
+    // Great-grandchildren (child,child,child)
+    if (edges[0] === "child" && edges[1] === "child" && edges[2] === "child") {
+      const firstChildGender = resolveGender(personIds[1], persons);
+      const viaDaughter = firstChildGender === "female";
+
+      if (viaDaughter) {
+        if (targetGender === "male") return { en: "Great-grandson", zhTW: "外曾孫" };
+        if (targetGender === "female") return { en: "Great-granddaughter", zhTW: "外曾孫女" };
+        return { en: "Great-grandchild", zhTW: "外曾孫" };
+      }
+      if (targetGender === "male") return { en: "Great-grandson", zhTW: "曾孫" };
+      if (targetGender === "female") return { en: "Great-granddaughter", zhTW: "曾孫女" };
+      return { en: "Great-grandchild", zhTW: "曾孫" };
+    }
   }
 
   // Fallback
