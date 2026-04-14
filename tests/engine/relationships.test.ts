@@ -268,6 +268,136 @@ describe("nephew/niece distinction", () => {
   });
 });
 
+describe("spouse's sibling", () => {
+  it("returns 大舅子 for wife's elder brother", () => {
+    const f: Person[] = [
+      makePerson({ id: "wdad", name: "WDad", gender: "male" }),
+      makePerson({ id: "wmom", name: "WMom", gender: "female", spouse: "wdad" }),
+      makePerson({ id: "me", name: "Me", spouse: "wife", gender: "male" }),
+      makePerson({ id: "wife", name: "Wife", spouse: "me", gender: "female", father: "wdad", mother: "wmom", birthOrder: 2 }),
+      makePerson({ id: "wbro", name: "WifeBro", father: "wdad", mother: "wmom", gender: "male", birthOrder: 1 }),
+    ];
+    const label = getRelationshipLabel("me", "wbro", f);
+    expect(label.en).toBe("Brother-in-law");
+    expect(label.zhTW).toBe("大舅子");
+  });
+
+  it("returns 小姑 for husband's younger sister (focused is female)", () => {
+    const f: Person[] = [
+      makePerson({ id: "hdad", name: "HDad", gender: "male" }),
+      makePerson({ id: "hmom", name: "HMom", gender: "female", spouse: "hdad" }),
+      makePerson({ id: "husband", name: "Husband", father: "hdad", mother: "hmom", spouse: "me", gender: "male", birthOrder: 1 }),
+      makePerson({ id: "me", name: "Me", spouse: "husband", gender: "female" }),
+      makePerson({ id: "hsis", name: "HusbandSis", father: "hdad", mother: "hmom", gender: "female", birthOrder: 2 }),
+    ];
+    const label = getRelationshipLabel("me", "hsis", f);
+    expect(label.en).toBe("Sister-in-law");
+    expect(label.zhTW).toBe("小姑");
+  });
+});
+
+describe("uncle/aunt's spouse", () => {
+  it("returns 伯母 for paternal elder uncle's wife", () => {
+    const f: Person[] = [
+      makePerson({ id: "gf", name: "GF", gender: "male" }),
+      makePerson({ id: "gm", name: "GM", gender: "female", spouse: "gf" }),
+      makePerson({ id: "elderUncle", name: "ElderUncle", father: "gf", mother: "gm", birthOrder: 1, gender: "male", spouse: "auntie" }),
+      makePerson({ id: "dad", name: "Dad", father: "gf", mother: "gm", birthOrder: 2, gender: "male" }),
+      makePerson({ id: "me", name: "Me", father: "dad", birthOrder: 1 }),
+      makePerson({ id: "auntie", name: "Auntie", spouse: "elderUncle", gender: "female" }),
+    ];
+    const label = getRelationshipLabel("me", "auntie", f);
+    expect(label.en).toBe("Aunt");
+    expect(label.zhTW).toBe("伯母");
+  });
+
+  it("returns 嬸嬸 for paternal younger uncle's wife", () => {
+    const f: Person[] = [
+      makePerson({ id: "gf", name: "GF", gender: "male" }),
+      makePerson({ id: "gm", name: "GM", gender: "female", spouse: "gf" }),
+      makePerson({ id: "dad", name: "Dad", father: "gf", mother: "gm", birthOrder: 1, gender: "male" }),
+      makePerson({ id: "youngerUncle", name: "YoungerUncle", father: "gf", mother: "gm", birthOrder: 2, gender: "male", spouse: "auntie" }),
+      makePerson({ id: "me", name: "Me", father: "dad", birthOrder: 1 }),
+      makePerson({ id: "auntie", name: "Auntie", spouse: "youngerUncle", gender: "female" }),
+    ];
+    const label = getRelationshipLabel("me", "auntie", f);
+    expect(label.en).toBe("Aunt");
+    expect(label.zhTW).toBe("嬸嬸");
+  });
+
+  it("returns 姑丈 for paternal aunt's husband", () => {
+    const f: Person[] = [
+      makePerson({ id: "gf", name: "GF", gender: "male" }),
+      makePerson({ id: "gm", name: "GM", gender: "female", spouse: "gf" }),
+      makePerson({ id: "aunt", name: "Aunt", father: "gf", mother: "gm", birthOrder: 1, gender: "female", spouse: "guzhang" }),
+      makePerson({ id: "dad", name: "Dad", father: "gf", mother: "gm", birthOrder: 2, gender: "male" }),
+      makePerson({ id: "me", name: "Me", father: "dad", birthOrder: 1 }),
+      makePerson({ id: "guzhang", name: "GuZhang", spouse: "aunt", gender: "male" }),
+    ];
+    const label = getRelationshipLabel("me", "guzhang", f);
+    expect(label.en).toBe("Uncle");
+    expect(label.zhTW).toBe("姑丈");
+  });
+
+  it("returns 舅媽 for maternal uncle's wife", () => {
+    const f: Person[] = [
+      makePerson({ id: "mgf", name: "MGF", gender: "male" }),
+      makePerson({ id: "mgm", name: "MGM", gender: "female", spouse: "mgf" }),
+      makePerson({ id: "mom", name: "Mom", father: "mgf", mother: "mgm", birthOrder: 1, gender: "female" }),
+      makePerson({ id: "uncle", name: "MaternalUncle", father: "mgf", mother: "mgm", birthOrder: 2, gender: "male", spouse: "jiuma" }),
+      makePerson({ id: "me", name: "Me", mother: "mom", birthOrder: 1 }),
+      makePerson({ id: "jiuma", name: "JiuMa", spouse: "uncle", gender: "female" }),
+    ];
+    const label = getRelationshipLabel("me", "jiuma", f);
+    expect(label.en).toBe("Aunt");
+    expect(label.zhTW).toBe("舅媽");
+  });
+
+  it("returns 姨丈 for maternal aunt's husband", () => {
+    const f: Person[] = [
+      makePerson({ id: "mgf", name: "MGF", gender: "male" }),
+      makePerson({ id: "mgm", name: "MGM", gender: "female", spouse: "mgf" }),
+      makePerson({ id: "mom", name: "Mom", father: "mgf", mother: "mgm", birthOrder: 1, gender: "female" }),
+      makePerson({ id: "aunt", name: "MaternalAunt", father: "mgf", mother: "mgm", birthOrder: 2, gender: "female", spouse: "yizhang" }),
+      makePerson({ id: "me", name: "Me", mother: "mom", birthOrder: 1 }),
+      makePerson({ id: "yizhang", name: "YiZhang", spouse: "aunt", gender: "male" }),
+    ];
+    const label = getRelationshipLabel("me", "yizhang", f);
+    expect(label.en).toBe("Uncle");
+    expect(label.zhTW).toBe("姨丈");
+  });
+});
+
+describe("妯娌/連襟", () => {
+  it("returns 妯娌 for husband's brother's wife (both female)", () => {
+    const f: Person[] = [
+      makePerson({ id: "fil", name: "FIL", gender: "male" }),
+      makePerson({ id: "mil", name: "MIL", gender: "female", spouse: "fil" }),
+      makePerson({ id: "husband", name: "Husband", father: "fil", mother: "mil", spouse: "me", gender: "male", birthOrder: 1 }),
+      makePerson({ id: "me", name: "Me", spouse: "husband", gender: "female" }),
+      makePerson({ id: "bil", name: "BIL", father: "fil", mother: "mil", spouse: "zholi", gender: "male", birthOrder: 2 }),
+      makePerson({ id: "zholi", name: "ZhouLi", spouse: "bil", gender: "female" }),
+    ];
+    const label = getRelationshipLabel("me", "zholi", f);
+    expect(label.en).toBe("Sister-in-law");
+    expect(label.zhTW).toBe("妯娌");
+  });
+
+  it("returns 連襟 for wife's sister's husband (both male)", () => {
+    const f: Person[] = [
+      makePerson({ id: "wdad", name: "WDad", gender: "male" }),
+      makePerson({ id: "wmom", name: "WMom", gender: "female", spouse: "wdad" }),
+      makePerson({ id: "wife", name: "Wife", father: "wdad", mother: "wmom", spouse: "me", gender: "female", birthOrder: 1 }),
+      makePerson({ id: "me", name: "Me", spouse: "wife", gender: "male" }),
+      makePerson({ id: "wsister", name: "WifeSis", father: "wdad", mother: "wmom", spouse: "lianqin", gender: "female", birthOrder: 2 }),
+      makePerson({ id: "lianqin", name: "LianQin", spouse: "wsister", gender: "male" }),
+    ];
+    const label = getRelationshipLabel("me", "lianqin", f);
+    expect(label.en).toBe("Brother-in-law");
+    expect(label.zhTW).toBe("連襟");
+  });
+});
+
 describe("findRelationshipPath personIds", () => {
   it("path from me to uncle includes intermediate dad", () => {
     // me -> father(dad) -> sibling(uncle), so personIds = ["me", "dad", "uncle"]

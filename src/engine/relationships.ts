@@ -254,11 +254,60 @@ export function getRelationshipLabel(
       return { en: "Nephew/Niece", zhTW: "姪甥" };
     }
 
-    // Spouse's sibling
+    // Spouse's sibling — full matrix by focused/target gender + elder/younger
     if (edges[0] === "spouse" && edges[1] === "sibling") {
-      if (targetGender === "male") return { en: "Brother-in-law", zhTW: "大舅" };
-      if (targetGender === "female") return { en: "Sister-in-law", zhTW: "大姑" };
+      const focusedGender = resolveGender(focusedId, persons);
+      const elder = isElderThan(targetId, personIds[1], persons);
+
+      if (focusedGender === "male") {
+        // Wife's siblings
+        if (targetGender === "male") {
+          return elder ? { en: "Brother-in-law", zhTW: "大舅子" } : { en: "Brother-in-law", zhTW: "小舅子" };
+        }
+        if (targetGender === "female") {
+          return elder ? { en: "Sister-in-law", zhTW: "大姨子" } : { en: "Sister-in-law", zhTW: "小姨子" };
+        }
+      }
+      if (focusedGender === "female") {
+        // Husband's siblings
+        if (targetGender === "male") {
+          return elder ? { en: "Brother-in-law", zhTW: "大伯" } : { en: "Brother-in-law", zhTW: "小叔" };
+        }
+        if (targetGender === "female") {
+          return elder ? { en: "Sister-in-law", zhTW: "大姑" } : { en: "Sister-in-law", zhTW: "小姑" };
+        }
+      }
       return { en: "Sibling-in-law", zhTW: "姻親" };
+    }
+  }
+
+  // Three-edge relationships (path length 3)
+  if (edges.length === 3) {
+    // Uncle/Aunt's spouse (parent's sibling's spouse)
+    if ((edges[0] === "father" || edges[0] === "mother") && edges[1] === "sibling" && edges[2] === "spouse") {
+      const uncleAuntGender = resolveGender(personIds[2], persons);
+
+      if (edges[0] === "father") {
+        // Paternal uncle/aunt's spouse
+        if (uncleAuntGender === "male") {
+          const elder = isElderThan(personIds[2], personIds[1], persons);
+          return elder ? { en: "Aunt", zhTW: "伯母" } : { en: "Aunt", zhTW: "嬸嬸" };
+        }
+        if (uncleAuntGender === "female") return { en: "Uncle", zhTW: "姑丈" };
+      } else {
+        // Maternal uncle/aunt's spouse
+        if (uncleAuntGender === "male") return { en: "Aunt", zhTW: "舅媽" };
+        if (uncleAuntGender === "female") return { en: "Uncle", zhTW: "姨丈" };
+      }
+      return { en: "In-law", zhTW: "姻親" };
+    }
+
+    // 妯娌/連襟 (spouse's sibling's spouse)
+    if (edges[0] === "spouse" && edges[1] === "sibling" && edges[2] === "spouse") {
+      const focusedGender = resolveGender(focusedId, persons);
+      if (focusedGender === "female" && targetGender === "female") return { en: "Sister-in-law", zhTW: "妯娌" };
+      if (focusedGender === "male" && targetGender === "male") return { en: "Brother-in-law", zhTW: "連襟" };
+      return { en: "In-law", zhTW: "姻親" };
     }
   }
 
