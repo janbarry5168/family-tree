@@ -125,6 +125,45 @@ describe("getRelationshipLabel", () => {
     expect(label.en).toBe("Uncle");
     expect(label.zhTW).toBe("叔叔");
   });
+
+  it("returns 伯父 for father's elder brother", () => {
+    const elderUncleFamily: Person[] = [
+      makePerson({ id: "gf", name: "GF", gender: "male" }),
+      makePerson({ id: "gm", name: "GM", gender: "female", spouse: "gf" }),
+      makePerson({ id: "eldest", name: "ElderUncle", father: "gf", mother: "gm", birthOrder: 1, gender: "male" }),
+      makePerson({ id: "dad", name: "Dad", father: "gf", mother: "gm", birthOrder: 2, gender: "male" }),
+      makePerson({ id: "me", name: "Me", father: "dad", birthOrder: 1 }),
+    ];
+    const label = getRelationshipLabel("me", "eldest", elderUncleFamily);
+    expect(label.en).toBe("Uncle");
+    expect(label.zhTW).toBe("伯父");
+  });
+
+  it("returns 舅舅 for mother's brother", () => {
+    const maternalFamily: Person[] = [
+      makePerson({ id: "mgf", name: "MGF", gender: "male" }),
+      makePerson({ id: "mgm", name: "MGM", gender: "female", spouse: "mgf" }),
+      makePerson({ id: "mom", name: "Mom", father: "mgf", mother: "mgm", birthOrder: 1, gender: "female" }),
+      makePerson({ id: "uncle", name: "MaternalUncle", father: "mgf", mother: "mgm", birthOrder: 2, gender: "male" }),
+      makePerson({ id: "me", name: "Me", mother: "mom", birthOrder: 1 }),
+    ];
+    const label = getRelationshipLabel("me", "uncle", maternalFamily);
+    expect(label.en).toBe("Uncle");
+    expect(label.zhTW).toBe("舅舅");
+  });
+
+  it("returns 阿姨 for mother's sister", () => {
+    const maternalFamily: Person[] = [
+      makePerson({ id: "mgf", name: "MGF", gender: "male" }),
+      makePerson({ id: "mgm", name: "MGM", gender: "female", spouse: "mgf" }),
+      makePerson({ id: "mom", name: "Mom", father: "mgf", mother: "mgm", birthOrder: 1, gender: "female" }),
+      makePerson({ id: "aunt", name: "MaternalAunt", father: "mgf", mother: "mgm", birthOrder: 2, gender: "female" }),
+      makePerson({ id: "me", name: "Me", mother: "mom", birthOrder: 1 }),
+    ];
+    const label = getRelationshipLabel("me", "aunt", maternalFamily);
+    expect(label.en).toBe("Aunt");
+    expect(label.zhTW).toBe("阿姨");
+  });
 });
 
 describe("grandchildren distinction", () => {

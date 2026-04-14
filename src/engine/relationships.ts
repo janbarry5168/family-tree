@@ -194,9 +194,20 @@ export function getRelationshipLabel(
 
     // Uncle/Aunt (parent's sibling)
     if ((edges[0] === "father" || edges[0] === "mother") && edges[1] === "sibling") {
-      if (targetGender === "male") return { en: "Uncle", zhTW: "叔叔" };
-      if (targetGender === "female") return { en: "Aunt", zhTW: "姑姑" };
-      return { en: "Uncle/Aunt", zhTW: "叔伯姑姨" };
+      if (edges[0] === "father") {
+        // Paternal uncle/aunt
+        if (targetGender === "male") {
+          const elder = isElderThan(targetId, personIds[1], persons);
+          return elder ? { en: "Uncle", zhTW: "伯父" } : { en: "Uncle", zhTW: "叔叔" };
+        }
+        if (targetGender === "female") return { en: "Aunt", zhTW: "姑姑" };
+        return { en: "Uncle/Aunt", zhTW: "伯叔姑" };
+      } else {
+        // Maternal uncle/aunt
+        if (targetGender === "male") return { en: "Uncle", zhTW: "舅舅" };
+        if (targetGender === "female") return { en: "Aunt", zhTW: "阿姨" };
+        return { en: "Uncle/Aunt", zhTW: "舅姨" };
+      }
     }
 
     // Nephew/Niece (sibling's child)
