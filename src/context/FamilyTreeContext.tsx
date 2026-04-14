@@ -19,6 +19,7 @@ interface FamilyTreeState {
   degreeFilter: number;
   view: "landing" | "tree";
   warnings: string[];
+  hiddenLabels: string[];
 }
 
 type Action =
@@ -29,7 +30,8 @@ type Action =
   | { type: "UPDATE_PERSON"; person: Person }
   | { type: "DELETE_PERSON"; id: string }
   | { type: "SET_VIEW"; view: "landing" | "tree" }
-  | { type: "REPLACE_ALL"; persons: Person[] };
+  | { type: "REPLACE_ALL"; persons: Person[] }
+  | { type: "TOGGLE_LABEL"; id: string };
 
 function reducer(state: FamilyTreeState, action: Action): FamilyTreeState {
   switch (action.type) {
@@ -39,10 +41,11 @@ function reducer(state: FamilyTreeState, action: Action): FamilyTreeState {
         persons: action.persons,
         focusedPersonId: action.focusedId,
         warnings: action.warnings ?? [],
+        hiddenLabels: [],
         view: "tree",
       };
     case "SET_FOCUSED":
-      return { ...state, focusedPersonId: action.id };
+      return { ...state, focusedPersonId: action.id, hiddenLabels: [] };
     case "SET_DEGREE":
       return { ...state, degreeFilter: action.degree };
     case "ADD_PERSON":
@@ -73,6 +76,15 @@ function reducer(state: FamilyTreeState, action: Action): FamilyTreeState {
       return { ...state, view: action.view };
     case "REPLACE_ALL":
       return { ...state, persons: action.persons };
+    case "TOGGLE_LABEL": {
+      const exists = state.hiddenLabels.includes(action.id);
+      return {
+        ...state,
+        hiddenLabels: exists
+          ? state.hiddenLabels.filter((id) => id !== action.id)
+          : [...state.hiddenLabels, action.id],
+      };
+    }
     default:
       return state;
   }
@@ -84,6 +96,7 @@ const initialState: FamilyTreeState = {
   degreeFilter: 2,
   view: "landing",
   warnings: [],
+  hiddenLabels: [],
 };
 
 const FamilyTreeContext = createContext<{
@@ -104,11 +117,12 @@ export function FamilyTreeProvider({ children }: { children: ReactNode }) {
           persons: state.persons,
           focusedPersonId: state.focusedPersonId,
           degreeFilter: state.degreeFilter,
+          hiddenLabels: state.hiddenLabels,
         })
       );
     }, AUTO_SAVE_INTERVAL);
     return () => clearInterval(interval);
-  }, [state.persons, state.focusedPersonId, state.degreeFilter]);
+  }, [state.persons, state.focusedPersonId, state.degreeFilter, state.hiddenLabels]);
 
   return (
     <FamilyTreeContext.Provider value={{ state, dispatch }}>

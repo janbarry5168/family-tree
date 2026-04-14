@@ -20,9 +20,11 @@ interface Props {
   focusedId: string;
   persons: Person[];
   onClick: (id: string) => void;
+  isLabelHidden: boolean;
+  onToggleLabel: (id: string) => void;
 }
 
-export default function PersonNode({ node, person, focusedId, persons, onClick }: Props) {
+export default function PersonNode({ node, person, focusedId, persons, onClick, isLabelHidden, onToggleLabel }: Props) {
   const { i18n } = useTranslation();
   const [hovered, setHovered] = useState(false);
   const style = STYLES[node.nodeType];
@@ -80,10 +82,32 @@ export default function PersonNode({ node, person, focusedId, persons, onClick }
       </text>
 
       {/* Relationship label */}
-      <text x={PHOTO_R * 2 + 16} y={NODE_H / 2 + 12}
-        fill={style.border} fontSize={10}>
-        {displayLabel}
-      </text>
+      {!isLabelHidden && (
+        <text x={PHOTO_R * 2 + 16} y={NODE_H / 2 + 12}
+          fill={style.border} fontSize={10}>
+          {displayLabel}
+        </text>
+      )}
+
+      {/* Toggle label icon */}
+      <g
+        transform={`translate(${NODE_W - 22}, ${NODE_H / 2 + 2})`}
+        onClick={(e) => { e.stopPropagation(); onToggleLabel(person.id); }}
+        style={{ cursor: "pointer" }}
+        opacity={0.5}
+      >
+        {isLabelHidden ? (
+          <g fill="none" stroke={style.border} strokeWidth={1.2}>
+            <path d="M1 7 Q7 1 13 7 Q7 13 1 7" />
+            <line x1="1" y1="1" x2="13" y2="13" />
+          </g>
+        ) : (
+          <g fill="none" stroke={style.border} strokeWidth={1.2}>
+            <path d="M1 7 Q7 1 13 7 Q7 13 1 7" />
+            <circle cx="7" cy="7" r="2.5" />
+          </g>
+        )}
+      </g>
     </g>
   );
 }

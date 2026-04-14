@@ -36,6 +36,22 @@ export default function TreeCanvas() {
     [dispatch]
   );
 
+  const handleToggleLabel = useCallback(
+    (id: string) => {
+      dispatch({ type: "TOGGLE_LABEL", id });
+    },
+    [dispatch]
+  );
+
+  const isLabelHidden = useCallback(
+    (nodeId: string, degree: number): boolean => {
+      const defaultHidden = degree > 2;
+      const toggled = state.hiddenLabels.includes(nodeId);
+      return toggled ? !defaultHidden : defaultHidden;
+    },
+    [state.hiddenLabels]
+  );
+
   const personById = useMemo(
     () => new Map(persons.map((p) => [p.id, p])),
     [persons]
@@ -63,7 +79,9 @@ export default function TreeCanvas() {
           if (!person) return null;
           return (
             <PersonNode key={node.id} node={node} person={person}
-              focusedId={focusedPersonId} persons={persons} onClick={handleNodeClick} />
+              focusedId={focusedPersonId} persons={persons} onClick={handleNodeClick}
+              isLabelHidden={isLabelHidden(node.id, node.degree)}
+              onToggleLabel={handleToggleLabel} />
           );
         })}
       </g>
