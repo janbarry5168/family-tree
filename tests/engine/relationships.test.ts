@@ -127,6 +127,28 @@ describe("getRelationshipLabel", () => {
   });
 });
 
+describe("grandchildren distinction", () => {
+  const grandchildFamily: Person[] = [
+    makePerson({ id: "gp", name: "Grandparent", gender: "male" }),
+    makePerson({ id: "son", name: "Son", father: "gp", birthOrder: 1, gender: "male" }),
+    makePerson({ id: "daughter", name: "Daughter", father: "gp", birthOrder: 2, gender: "female" }),
+    makePerson({ id: "gc-via-son", name: "GC via Son", father: "son", birthOrder: 1, gender: "male" }),
+    makePerson({ id: "gc-via-daughter", name: "GC via Daughter", father: "daughter", birthOrder: 1, gender: "female" }),
+  ];
+
+  it("returns 孫子 for grandson via son (paternal)", () => {
+    const label = getRelationshipLabel("gp", "gc-via-son", grandchildFamily);
+    expect(label.en).toBe("Grandson");
+    expect(label.zhTW).toBe("孫子");
+  });
+
+  it("returns 外孫女 for granddaughter via daughter (maternal)", () => {
+    const label = getRelationshipLabel("gp", "gc-via-daughter", grandchildFamily);
+    expect(label.en).toBe("Granddaughter");
+    expect(label.zhTW).toBe("外孫女");
+  });
+});
+
 describe("findRelationshipPath personIds", () => {
   it("path from me to uncle includes intermediate dad", () => {
     // me -> father(dad) -> sibling(uncle), so personIds = ["me", "dad", "uncle"]

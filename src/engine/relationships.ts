@@ -126,78 +126,92 @@ export function getRelationshipLabel(
   const path = findRelationshipPath(focusedId, targetId, persons);
   if (!path) return { en: "Relative", zhTW: "親戚" };
 
-  const { edges, personIds: _personIds } = path;
+  const { edges, personIds } = path;
   const targetGender = resolveGender(targetId, persons);
   const focusedPerson = persons.find((p) => p.id === focusedId)!;
   const targetPerson = persons.find((p) => p.id === targetId)!;
-  const key = edges.join(",");
 
-  // Direct relationships
-  if (key === "father") return { en: "Father", zhTW: "父親" };
-  if (key === "mother") return { en: "Mother", zhTW: "母親" };
-  if (key === "spouse") {
-    if (targetGender === "female") return { en: "Wife", zhTW: "妻子" };
-    if (targetGender === "male") return { en: "Husband", zhTW: "丈夫" };
-    return { en: "Spouse", zhTW: "配偶" };
-  }
-  if (key === "child") {
-    if (targetGender === "male") return { en: "Son", zhTW: "兒子" };
-    if (targetGender === "female") return { en: "Daughter", zhTW: "女兒" };
-    return { en: "Child", zhTW: "孩子" };
-  }
-  if (key === "sibling") {
-    const isElder = targetPerson.birthOrder < focusedPerson.birthOrder;
-    if (targetGender === "male") {
-      return isElder ? { en: "Elder Brother", zhTW: "哥哥" } : { en: "Younger Brother", zhTW: "弟弟" };
+  // Direct relationships (path length 1)
+  if (edges.length === 1) {
+    if (edges[0] === "father") return { en: "Father", zhTW: "父親" };
+    if (edges[0] === "mother") return { en: "Mother", zhTW: "母親" };
+    if (edges[0] === "spouse") {
+      if (targetGender === "female") return { en: "Wife", zhTW: "妻子" };
+      if (targetGender === "male") return { en: "Husband", zhTW: "丈夫" };
+      return { en: "Spouse", zhTW: "配偶" };
     }
-    if (targetGender === "female") {
-      return isElder ? { en: "Elder Sister", zhTW: "姊姊" } : { en: "Younger Sister", zhTW: "妹妹" };
+    if (edges[0] === "child") {
+      if (targetGender === "male") return { en: "Son", zhTW: "兒子" };
+      if (targetGender === "female") return { en: "Daughter", zhTW: "女兒" };
+      return { en: "Child", zhTW: "孩子" };
     }
-    return { en: "Sibling", zhTW: "兄弟姊妹" };
+    if (edges[0] === "sibling") {
+      const isElder = targetPerson.birthOrder < focusedPerson.birthOrder;
+      if (targetGender === "male") {
+        return isElder ? { en: "Elder Brother", zhTW: "哥哥" } : { en: "Younger Brother", zhTW: "弟弟" };
+      }
+      if (targetGender === "female") {
+        return isElder ? { en: "Elder Sister", zhTW: "姊姊" } : { en: "Younger Sister", zhTW: "妹妹" };
+      }
+      return { en: "Sibling", zhTW: "兄弟姊妹" };
+    }
   }
 
-  // Grandparents
-  if (key === "father,father") return { en: "Grandfather", zhTW: "祖父" };
-  if (key === "father,mother") return { en: "Grandmother", zhTW: "祖母" };
-  if (key === "mother,father") return { en: "Grandfather", zhTW: "外祖父" };
-  if (key === "mother,mother") return { en: "Grandmother", zhTW: "外祖母" };
+  // Two-edge relationships (path length 2)
+  if (edges.length === 2) {
+    // Grandparents
+    if (edges[0] === "father" && edges[1] === "father") return { en: "Grandfather", zhTW: "祖父" };
+    if (edges[0] === "father" && edges[1] === "mother") return { en: "Grandmother", zhTW: "祖母" };
+    if (edges[0] === "mother" && edges[1] === "father") return { en: "Grandfather", zhTW: "外祖父" };
+    if (edges[0] === "mother" && edges[1] === "mother") return { en: "Grandmother", zhTW: "外祖母" };
 
-  // Grandchildren
-  if (key === "child,child") {
-    if (targetGender === "male") return { en: "Grandson", zhTW: "孫子" };
-    if (targetGender === "female") return { en: "Granddaughter", zhTW: "孫女" };
-    return { en: "Grandchild", zhTW: "孫" };
-  }
+    // Grandchildren — paternal (via son) vs maternal (via daughter)
+    if (edges[0] === "child" && edges[1] === "child") {
+      const intermediateGender = resolveGender(personIds[1], persons);
+      const viaDaughter = intermediateGender === "female";
 
-  // In-laws (spouse's parents)
-  if (key === "spouse,father") {
-    if (inferGender(focusedId, persons) === "male") return { en: "Father-in-law", zhTW: "岳父" };
-    return { en: "Father-in-law", zhTW: "公公" };
-  }
-  if (key === "spouse,mother") {
-    if (inferGender(focusedId, persons) === "male") return { en: "Mother-in-law", zhTW: "岳母" };
-    return { en: "Mother-in-law", zhTW: "婆婆" };
-  }
+      if (viaDaughter) {
+        if (targetGender === "male") return { en: "Grandson", zhTW: "外孫" };
+        if (targetGender === "female") return { en: "Granddaughter", zhTW: "外孫女" };
+        return { en: "Grandchild", zhTW: "外孫" };
+      }
+      if (targetGender === "male") return { en: "Grandson", zhTW: "孫子" };
+      if (targetGender === "female") return { en: "Granddaughter", zhTW: "孫女" };
+      return { en: "Grandchild", zhTW: "孫" };
+    }
 
-  // Uncle/Aunt (parent's sibling)
-  if (edges.length === 2 && (edges[0] === "father" || edges[0] === "mother") && edges[1] === "sibling") {
-    if (targetGender === "male") return { en: "Uncle", zhTW: "叔叔" };
-    if (targetGender === "female") return { en: "Aunt", zhTW: "姑姑" };
-    return { en: "Uncle/Aunt", zhTW: "叔伯姑姨" };
-  }
+    // In-laws (spouse's parents)
+    if (edges[0] === "spouse" && edges[1] === "father") {
+      const focusedGender = resolveGender(focusedId, persons);
+      if (focusedGender === "male") return { en: "Father-in-law", zhTW: "岳父" };
+      return { en: "Father-in-law", zhTW: "公公" };
+    }
+    if (edges[0] === "spouse" && edges[1] === "mother") {
+      const focusedGender = resolveGender(focusedId, persons);
+      if (focusedGender === "male") return { en: "Mother-in-law", zhTW: "岳母" };
+      return { en: "Mother-in-law", zhTW: "婆婆" };
+    }
 
-  // Nephew/Niece (sibling's child)
-  if (edges.length === 2 && edges[0] === "sibling" && edges[1] === "child") {
-    if (targetGender === "male") return { en: "Nephew", zhTW: "姪子" };
-    if (targetGender === "female") return { en: "Niece", zhTW: "姪女" };
-    return { en: "Nephew/Niece", zhTW: "姪" };
-  }
+    // Uncle/Aunt (parent's sibling)
+    if ((edges[0] === "father" || edges[0] === "mother") && edges[1] === "sibling") {
+      if (targetGender === "male") return { en: "Uncle", zhTW: "叔叔" };
+      if (targetGender === "female") return { en: "Aunt", zhTW: "姑姑" };
+      return { en: "Uncle/Aunt", zhTW: "叔伯姑姨" };
+    }
 
-  // Spouse's sibling
-  if (key === "spouse,sibling") {
-    if (targetGender === "male") return { en: "Brother-in-law", zhTW: "大舅" };
-    if (targetGender === "female") return { en: "Sister-in-law", zhTW: "大姑" };
-    return { en: "Sibling-in-law", zhTW: "姻親" };
+    // Nephew/Niece (sibling's child)
+    if (edges[0] === "sibling" && edges[1] === "child") {
+      if (targetGender === "male") return { en: "Nephew", zhTW: "姪子" };
+      if (targetGender === "female") return { en: "Niece", zhTW: "姪女" };
+      return { en: "Nephew/Niece", zhTW: "姪" };
+    }
+
+    // Spouse's sibling
+    if (edges[0] === "spouse" && edges[1] === "sibling") {
+      if (targetGender === "male") return { en: "Brother-in-law", zhTW: "大舅" };
+      if (targetGender === "female") return { en: "Sister-in-law", zhTW: "大姑" };
+      return { en: "Sibling-in-law", zhTW: "姻親" };
+    }
   }
 
   // Fallback
