@@ -180,6 +180,14 @@ export function getRelationshipLabel(
       return { en: "Grandchild", zhTW: "孫" };
     }
 
+    // Child's spouse
+    if (edges[0] === "child" && edges[1] === "spouse") {
+      const childGender = resolveGender(personIds[1], persons);
+      if (childGender === "male") return { en: "Daughter-in-law", zhTW: "媳婦" };
+      if (childGender === "female") return { en: "Son-in-law", zhTW: "女婿" };
+      return { en: "Child-in-law", zhTW: "媳婿" };
+    }
+
     // In-laws (spouse's parents)
     if (edges[0] === "spouse" && edges[1] === "father") {
       const focusedGender = resolveGender(focusedId, persons);
@@ -210,11 +218,40 @@ export function getRelationshipLabel(
       }
     }
 
-    // Nephew/Niece (sibling's child)
+    // Sibling's spouse
+    if (edges[0] === "sibling" && edges[1] === "spouse") {
+      const siblingGender = resolveGender(personIds[1], persons);
+      const siblingIsElder = isElderThan(personIds[1], focusedId, persons);
+
+      if (siblingGender === "male") {
+        return siblingIsElder
+          ? { en: "Sister-in-law", zhTW: "嫂嫂" }
+          : { en: "Sister-in-law", zhTW: "弟媳" };
+      }
+      if (siblingGender === "female") {
+        return siblingIsElder
+          ? { en: "Brother-in-law", zhTW: "姊夫" }
+          : { en: "Brother-in-law", zhTW: "妹夫" };
+      }
+      return { en: "Sibling-in-law", zhTW: "姻親" };
+    }
+
+    // Nephew/Niece (sibling's child) — brother vs sister
     if (edges[0] === "sibling" && edges[1] === "child") {
-      if (targetGender === "male") return { en: "Nephew", zhTW: "姪子" };
-      if (targetGender === "female") return { en: "Niece", zhTW: "姪女" };
-      return { en: "Nephew/Niece", zhTW: "姪" };
+      const siblingGender = resolveGender(personIds[1], persons);
+      if (siblingGender === "male") {
+        // Brother's child
+        if (targetGender === "male") return { en: "Nephew", zhTW: "姪子" };
+        if (targetGender === "female") return { en: "Niece", zhTW: "姪女" };
+        return { en: "Nephew/Niece", zhTW: "姪" };
+      }
+      if (siblingGender === "female") {
+        // Sister's child
+        if (targetGender === "male") return { en: "Nephew", zhTW: "外甥" };
+        if (targetGender === "female") return { en: "Niece", zhTW: "外甥女" };
+        return { en: "Nephew/Niece", zhTW: "外甥" };
+      }
+      return { en: "Nephew/Niece", zhTW: "姪甥" };
     }
 
     // Spouse's sibling

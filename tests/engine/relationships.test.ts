@@ -188,6 +188,86 @@ describe("grandchildren distinction", () => {
   });
 });
 
+describe("sibling's spouse", () => {
+  it("returns 嫂嫂 for elder brother's wife", () => {
+    const f: Person[] = [
+      makePerson({ id: "dad", name: "Dad", gender: "male" }),
+      makePerson({ id: "mom", name: "Mom", gender: "female", spouse: "dad" }),
+      makePerson({ id: "bro", name: "ElderBro", father: "dad", mother: "mom", birthOrder: 1, gender: "male", spouse: "sil" }),
+      makePerson({ id: "me", name: "Me", father: "dad", mother: "mom", birthOrder: 2, gender: "male" }),
+      makePerson({ id: "sil", name: "SisterInLaw", spouse: "bro", gender: "female" }),
+    ];
+    const label = getRelationshipLabel("me", "sil", f);
+    expect(label.en).toBe("Sister-in-law");
+    expect(label.zhTW).toBe("嫂嫂");
+  });
+
+  it("returns 弟媳 for younger brother's wife", () => {
+    const f: Person[] = [
+      makePerson({ id: "dad", name: "Dad", gender: "male" }),
+      makePerson({ id: "mom", name: "Mom", gender: "female", spouse: "dad" }),
+      makePerson({ id: "me", name: "Me", father: "dad", mother: "mom", birthOrder: 1, gender: "male" }),
+      makePerson({ id: "bro", name: "YoungerBro", father: "dad", mother: "mom", birthOrder: 2, gender: "male", spouse: "sil" }),
+      makePerson({ id: "sil", name: "SisterInLaw", spouse: "bro", gender: "female" }),
+    ];
+    const label = getRelationshipLabel("me", "sil", f);
+    expect(label.en).toBe("Sister-in-law");
+    expect(label.zhTW).toBe("弟媳");
+  });
+});
+
+describe("child's spouse", () => {
+  it("returns 媳婦 for son's wife", () => {
+    const f: Person[] = [
+      makePerson({ id: "me", name: "Me", gender: "male" }),
+      makePerson({ id: "son", name: "Son", father: "me", birthOrder: 1, gender: "male", spouse: "dil" }),
+      makePerson({ id: "dil", name: "DaughterInLaw", spouse: "son", gender: "female" }),
+    ];
+    const label = getRelationshipLabel("me", "dil", f);
+    expect(label.en).toBe("Daughter-in-law");
+    expect(label.zhTW).toBe("媳婦");
+  });
+
+  it("returns 女婿 for daughter's husband", () => {
+    const f: Person[] = [
+      makePerson({ id: "me", name: "Me", gender: "male" }),
+      makePerson({ id: "daughter", name: "Daughter", father: "me", birthOrder: 1, gender: "female", spouse: "sil" }),
+      makePerson({ id: "sil", name: "SonInLaw", spouse: "daughter", gender: "male" }),
+    ];
+    const label = getRelationshipLabel("me", "sil", f);
+    expect(label.en).toBe("Son-in-law");
+    expect(label.zhTW).toBe("女婿");
+  });
+});
+
+describe("nephew/niece distinction", () => {
+  it("returns 外甥 for sister's son", () => {
+    const f: Person[] = [
+      makePerson({ id: "dad", name: "Dad", gender: "male" }),
+      makePerson({ id: "mom", name: "Mom", gender: "female", spouse: "dad" }),
+      makePerson({ id: "me", name: "Me", father: "dad", mother: "mom", birthOrder: 1 }),
+      makePerson({ id: "sis", name: "Sister", father: "dad", mother: "mom", birthOrder: 2, gender: "female" }),
+      makePerson({ id: "nephew", name: "Nephew", mother: "sis", birthOrder: 1, gender: "male" }),
+    ];
+    const label = getRelationshipLabel("me", "nephew", f);
+    expect(label.en).toBe("Nephew");
+    expect(label.zhTW).toBe("外甥");
+  });
+
+  it("returns 姪女 for brother's daughter", () => {
+    const f: Person[] = [
+      makePerson({ id: "dad", name: "Dad", gender: "male" }),
+      makePerson({ id: "mom", name: "Mom", gender: "female", spouse: "dad" }),
+      makePerson({ id: "me", name: "Me", father: "dad", mother: "mom", birthOrder: 1 }),
+      makePerson({ id: "bro", name: "Brother", father: "dad", mother: "mom", birthOrder: 2, gender: "male" }),
+      makePerson({ id: "niece", name: "Niece", father: "bro", birthOrder: 1, gender: "female" }),
+    ];
+    const label = getRelationshipLabel("me", "niece", f);
+    expect(label.en).toBe("Niece");
+    expect(label.zhTW).toBe("姪女");
+  });
+});
+
 describe("findRelationshipPath personIds", () => {
   it("path from me to uncle includes intermediate dad", () => {
     // me -> father(dad) -> sibling(uncle), so personIds = ["me", "dad", "uncle"]
