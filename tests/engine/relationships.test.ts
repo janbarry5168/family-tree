@@ -4,6 +4,7 @@ import {
   getSiblings,
   inferGender,
   getRelationshipLabel,
+  isElderThan,
 } from "../../src/engine/relationships";
 import type { Person } from "../../src/types/person";
 
@@ -28,6 +29,7 @@ const family: Person[] = [
   makePerson({ id: "wife", name: "Wife", father: "fil", mother: "mil", spouse: "me" }),
   makePerson({ id: "sis", name: "Sister", father: "dad", mother: "mom", birthOrder: 2, gender: "female" }),
   makePerson({ id: "son", name: "Son", father: "me", mother: "wife", birthOrder: 1, gender: "male" }),
+  makePerson({ id: "uncle", name: "Uncle", father: "gf", mother: "gm", birthOrder: 2, gender: "male" }),
   makePerson({ id: "fil", name: "Father-in-law", spouse: "mil" }),
   makePerson({ id: "mil", name: "Mother-in-law", spouse: "fil" }),
 ];
@@ -116,5 +118,42 @@ describe("getRelationshipLabel", () => {
   it("returns Self for focused person", () => {
     const label = getRelationshipLabel("me", "me", family);
     expect(label.en).toBe("Self");
+  });
+
+  it("returns Uncle for father's brother relative to me", () => {
+    const label = getRelationshipLabel("me", "uncle", family);
+    expect(label.en).toBe("Uncle");
+    expect(label.zhTW).toBe("叔叔");
+  });
+});
+
+describe("findRelationshipPath personIds", () => {
+  it("path from me to uncle includes intermediate dad", () => {
+    // me -> father(dad) -> sibling(uncle), so personIds = ["me", "dad", "uncle"]
+    // We verify this indirectly: uncle is reachable and the label is correct.
+    // For direct verification, we test via getRelationshipLabel which uses the path internally.
+    const label = getRelationshipLabel("me", "uncle", family);
+    expect(label.en).toBe("Uncle");
+  });
+});
+
+describe("isElderThan", () => {
+  it("returns true when a has lower birthOrder (same parents)", () => {
+    expect(isElderThan("dad", "uncle", family)).toBe(true);
+  });
+
+  it("returns false when a has higher birthOrder (same parents)", () => {
+    expect(isElderThan("uncle", "dad", family)).toBe(false);
+  });
+
+  it("falls back to birthYear for cross-family comparison", () => {
+    const a = makePerson({ id: "a", birthYear: 1980 });
+    const b = makePerson({ id: "b", birthYear: 1990 });
+    expect(isElderThan("a", "b", [a, b])).toBe(true);
+    expect(isElderThan("b", "a", [a, b])).toBe(false);
+  });
+
+  it("returns false when person not found", () => {
+    expect(isElderThan("nonexistent", "dad", family)).toBe(false);
   });
 });

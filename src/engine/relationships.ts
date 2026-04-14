@@ -35,8 +35,7 @@ export function inferGender(personId: string, persons: Person[]): Gender {
 //
 // Note: leaf persons with no children, no explicit gender field, and no spouse whose
 // gender is known will return "unknown". Callers should present a gender-neutral label
-// in that case. The Person data model should be extended with an explicit `gender` field
-// to eliminate this gap.
+// in that case.
 function resolveGender(personId: string, persons: Person[]): Gender {
   const person = persons.find((p) => p.id === personId);
   if (!person) return "unknown";
@@ -63,21 +62,28 @@ interface RelationshipLabel {
   zhTW: string;
 }
 
-type EdgeType = "father" | "mother" | "spouse" | "child" | "sibling";
+export type EdgeType = "father" | "mother" | "spouse" | "child" | "sibling";
+
+interface RelationshipPath {
+  edges: EdgeType[];
+  personIds: string[];
+}
 
 function findRelationshipPath(
   fromId: string,
   toId: string,
   persons: Person[]
-): EdgeType[] | null {
-  if (fromId === toId) return [];
+): RelationshipPath | null {
+  if (fromId === toId) return { edges: [], personIds: [fromId] };
 
   const byId = new Map(persons.map((p) => [p.id, p]));
-  const queue: Array<{ id: string; path: EdgeType[] }> = [{ id: fromId, path: [] }];
+  const queue: Array<{ id: string; edges: EdgeType[]; personIds: string[] }> = [
+    { id: fromId, edges: [], personIds: [fromId] },
+  ];
   const visited = new Set<string>([fromId]);
 
   while (queue.length > 0) {
-    const { id, path } = queue.shift()!;
+    const { id, edges, personIds } = queue.shift()!;
     const person = byId.get(id);
     if (!person) continue;
 
@@ -99,10 +105,11 @@ function findRelationshipPath(
 
     for (const { targetId, edge } of neighbors) {
       if (visited.has(targetId)) continue;
-      const newPath = [...path, edge];
-      if (targetId === toId) return newPath;
+      const newEdges = [...edges, edge];
+      const newPersonIds = [...personIds, targetId];
+      if (targetId === toId) return { edges: newEdges, personIds: newPersonIds };
       visited.add(targetId);
-      queue.push({ id: targetId, path: newPath });
+      queue.push({ id: targetId, edges: newEdges, personIds: newPersonIds });
     }
   }
 
@@ -119,10 +126,11 @@ export function getRelationshipLabel(
   const path = findRelationshipPath(focusedId, targetId, persons);
   if (!path) return { en: "Relative", zhTW: "親戚" };
 
+  const { edges, personIds: _personIds } = path;
   const targetGender = resolveGender(targetId, persons);
   const focusedPerson = persons.find((p) => p.id === focusedId)!;
   const targetPerson = persons.find((p) => p.id === targetId)!;
-  const key = path.join(",");
+  const key = edges.join(",");
 
   // Direct relationships
   if (key === "father") return { en: "Father", zhTW: "父親" };
@@ -172,14 +180,14 @@ export function getRelationshipLabel(
   }
 
   // Uncle/Aunt (parent's sibling)
-  if (path.length === 2 && (path[0] === "father" || path[0] === "mother") && path[1] === "sibling") {
+  if (edges.length === 2 && (edges[0] === "father" || edges[0] === "mother") && edges[1] === "sibling") {
     if (targetGender === "male") return { en: "Uncle", zhTW: "叔叔" };
     if (targetGender === "female") return { en: "Aunt", zhTW: "姑姑" };
     return { en: "Uncle/Aunt", zhTW: "叔伯姑姨" };
   }
 
   // Nephew/Niece (sibling's child)
-  if (path.length === 2 && path[0] === "sibling" && path[1] === "child") {
+  if (edges.length === 2 && edges[0] === "sibling" && edges[1] === "child") {
     if (targetGender === "male") return { en: "Nephew", zhTW: "姪子" };
     if (targetGender === "female") return { en: "Niece", zhTW: "姪女" };
     return { en: "Nephew/Niece", zhTW: "姪" };
@@ -194,4 +202,22 @@ export function getRelationshipLabel(
 
   // Fallback
   return { en: "Relative", zhTW: "親戚" };
+}
+
+// Determines if person `aId` is elder than person `bId`.
+// Same-parent siblings: compared by birthOrder (lower = elder).
+// Cross-family: falls back to birthYear (lower = elder).
+export function isElderThan(aId: string, bId: string, persons: Person[]): boolean {
+  const a = persons.find((p) => p.id === aId);
+  const b = persons.find((p) => p.id === bId);
+  if (!a || !b) return false;
+
+  const sameParent =
+    a.father && b.father && a.father === b.father &&
+    a.mother && b.mother && a.mother === b.mother;
+  if (sameParent) return a.birthOrder < b.birthOrder;
+
+  if (a.birthYear && b.birthYear) return a.birthYear < b.birthYear;
+
+  return false;
 }
