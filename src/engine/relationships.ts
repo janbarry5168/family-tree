@@ -374,6 +374,42 @@ export function getRelationshipLabel(
       return { en: "Great-nephew/niece", zhTW: "姪甥孫" };
     }
 
+    // Nephew/Niece's spouse (sibling → child → spouse).
+    // Brother's son's wife → 姪媳; brother's daughter's husband → 姪女婿.
+    // Sister's son's wife → 外甥媳; sister's daughter's husband → 外甥女婿.
+    if (edges[0] === "sibling" && edges[1] === "child" && edges[2] === "spouse") {
+      const siblingGender = resolveGender(personIds[1], persons);
+      const nieceNephewGender = resolveGender(personIds[2], persons);
+      const viaSister = siblingGender === "female";
+      const prefix = viaSister ? "外甥" : "姪";
+
+      if (nieceNephewGender === "male") {
+        return { en: "Niece-in-law", zhTW: `${prefix}媳` };
+      }
+      if (nieceNephewGender === "female") {
+        return { en: "Nephew-in-law", zhTW: `${prefix}女婿` };
+      }
+      return { en: "Nephew/Niece-in-law", zhTW: `${prefix}媳婿` };
+    }
+
+    // Grandchild's spouse (child → child → spouse).
+    // Via son → grandson's wife 孫媳 / granddaughter's husband 孫女婿.
+    // Via daughter → 外孫媳 / 外孫女婿.
+    if (edges[0] === "child" && edges[1] === "child" && edges[2] === "spouse") {
+      const intermediateGender = resolveGender(personIds[1], persons);
+      const grandchildGender = resolveGender(personIds[2], persons);
+      const viaDaughter = intermediateGender === "female";
+      const prefix = viaDaughter ? "外孫" : "孫";
+
+      if (grandchildGender === "male") {
+        return { en: "Granddaughter-in-law", zhTW: `${prefix}媳` };
+      }
+      if (grandchildGender === "female") {
+        return { en: "Grandson-in-law", zhTW: `${prefix}女婿` };
+      }
+      return { en: "Grandchild-in-law", zhTW: `${prefix}媳婿` };
+    }
+
     // Great-grandparents (3-hop ancestor)
     if ((edges[0] === "father" || edges[0] === "mother") &&
         (edges[1] === "father" || edges[1] === "mother") &&
@@ -444,6 +480,78 @@ export function getRelationshipLabel(
         if (targetGender === "female") return { en: "Aunt", zhTW: `${prefix}姨` };
         return { en: "Uncle/Aunt", zhTW: `${prefix}舅姨` };
       }
+    }
+
+    // Great-uncle / great-aunt's spouse (grandparent's sibling's spouse).
+    // [parent, parent, sibling, spouse].
+    // Paternal grandpa line (father,father): 伯公/叔公's wife → 伯婆/叔婆 (by age vs grandparent);
+    // 姑婆's husband → 姑丈公. All other grandparent lines collapse to 舅婆 / 姨丈公.
+    if ((edges[0] === "father" || edges[0] === "mother") &&
+        (edges[1] === "father" || edges[1] === "mother") &&
+        edges[2] === "sibling" &&
+        edges[3] === "spouse") {
+      const greatUncleAuntGender = resolveGender(personIds[3], persons);
+      const isPaternalGrandpaLine = edges[0] === "father" && edges[1] === "father";
+
+      if (isPaternalGrandpaLine) {
+        if (greatUncleAuntGender === "male") {
+          // Great-uncle's wife → 伯婆 (if great-uncle elder than grandpa) or 叔婆 (younger)
+          const grandparentId = personIds[2];
+          const greatUncleId = personIds[3];
+          const elder = isElderThan(greatUncleId, grandparentId, persons);
+          return elder ? { en: "Great-aunt", zhTW: "伯婆" } : { en: "Great-aunt", zhTW: "叔婆" };
+        }
+        if (greatUncleAuntGender === "female") {
+          // Great-aunt's husband → 姑丈公
+          return { en: "Great-uncle", zhTW: "姑丈公" };
+        }
+        return { en: "Great-uncle/aunt-in-law", zhTW: "姻親" };
+      }
+
+      // Other grandparent lines (paternal grandma, maternal grandpa, maternal grandma).
+      if (greatUncleAuntGender === "male") {
+        // Great-uncle's wife → 舅婆
+        return { en: "Great-aunt", zhTW: "舅婆" };
+      }
+      if (greatUncleAuntGender === "female") {
+        // Great-aunt's husband → 姨丈公
+        return { en: "Great-uncle", zhTW: "姨丈公" };
+      }
+      return { en: "Great-uncle/aunt-in-law", zhTW: "姻親" };
+    }
+
+    // Cousin's spouse (parent → sibling → child → spouse).
+    // Same 堂 / 表 classification as length-3 cousin: 堂 when paternal uncle's child.
+    // Male cousin elder → 堂兄/表兄; his wife → 堂嫂/表嫂.
+    // Male cousin younger → 堂弟/表弟; his wife → 堂弟媳/表弟媳.
+    // Female cousin elder → 堂姊/表姊; her husband → 堂姊夫/表姊夫.
+    // Female cousin younger → 堂妹/表妹; her husband → 堂妹夫/表妹夫.
+    if ((edges[0] === "father" || edges[0] === "mother") &&
+        edges[1] === "sibling" &&
+        edges[2] === "child" &&
+        edges[3] === "spouse") {
+      const uncleAuntGender = resolveGender(personIds[2], persons);
+      const cousinId = personIds[3];
+      const cousinGender = resolveGender(cousinId, persons);
+      const cousinElder = isElderThan(cousinId, focusedId, persons);
+
+      // Paternal uncle's children → 堂; all others → 表
+      const isTang = edges[0] === "father" && uncleAuntGender === "male";
+      const prefix = isTang ? "堂" : "表";
+
+      if (cousinGender === "male") {
+        // Cousin's wife
+        return cousinElder
+          ? { en: "Cousin-in-law", zhTW: `${prefix}嫂` }
+          : { en: "Cousin-in-law", zhTW: `${prefix}弟媳` };
+      }
+      if (cousinGender === "female") {
+        // Cousin's husband
+        return cousinElder
+          ? { en: "Cousin-in-law", zhTW: `${prefix}姊夫` }
+          : { en: "Cousin-in-law", zhTW: `${prefix}妹夫` };
+      }
+      return { en: "Cousin-in-law", zhTW: `${prefix}姻親` };
     }
   }
 

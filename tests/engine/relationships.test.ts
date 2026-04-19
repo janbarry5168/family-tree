@@ -662,3 +662,965 @@ describe("isElderThan — same-year tiebreak", () => {
     expect(isElderThan("x", "y", persons)).toBe(true);
   });
 });
+
+describe("getRelationshipLabel — full Chinese kinship coverage matrix", () => {
+  // ---- Ascending: parents and grandparents ----
+  describe("Ascending: parents and grandparents", () => {
+    it("father → 父親", () => {
+      const f: Person[] = [
+        makePerson({ id: "dad", gender: "male" }),
+        makePerson({ id: "me", father: "dad" }),
+      ];
+      expect(getRelationshipLabel("me", "dad", f)).toEqual({ en: "Father", zhTW: "父親" });
+    });
+
+    it("mother → 母親", () => {
+      const f: Person[] = [
+        makePerson({ id: "mom", gender: "female" }),
+        makePerson({ id: "me", mother: "mom" }),
+      ];
+      expect(getRelationshipLabel("me", "mom", f)).toEqual({ en: "Mother", zhTW: "母親" });
+    });
+
+    it("paternal grandfather → 祖父", () => {
+      const f: Person[] = [
+        makePerson({ id: "pgf", gender: "male" }),
+        makePerson({ id: "dad", father: "pgf", gender: "male" }),
+        makePerson({ id: "me", father: "dad" }),
+      ];
+      expect(getRelationshipLabel("me", "pgf", f).zhTW).toBe("祖父");
+    });
+
+    it("paternal grandmother → 祖母", () => {
+      const f: Person[] = [
+        makePerson({ id: "pgm", gender: "female" }),
+        makePerson({ id: "dad", mother: "pgm", gender: "male" }),
+        makePerson({ id: "me", father: "dad" }),
+      ];
+      expect(getRelationshipLabel("me", "pgm", f).zhTW).toBe("祖母");
+    });
+
+    it("maternal grandfather → 外祖父", () => {
+      const f: Person[] = [
+        makePerson({ id: "mgf", gender: "male" }),
+        makePerson({ id: "mom", father: "mgf", gender: "female" }),
+        makePerson({ id: "me", mother: "mom" }),
+      ];
+      expect(getRelationshipLabel("me", "mgf", f).zhTW).toBe("外祖父");
+    });
+
+    it("maternal grandmother → 外祖母", () => {
+      const f: Person[] = [
+        makePerson({ id: "mgm", gender: "female" }),
+        makePerson({ id: "mom", mother: "mgm", gender: "female" }),
+        makePerson({ id: "me", mother: "mom" }),
+      ];
+      expect(getRelationshipLabel("me", "mgm", f).zhTW).toBe("外祖母");
+    });
+
+    it("paternal great-grandfather → 曾祖父", () => {
+      const f: Person[] = [
+        makePerson({ id: "ggf", gender: "male" }),
+        makePerson({ id: "gf", father: "ggf", gender: "male" }),
+        makePerson({ id: "dad", father: "gf", gender: "male" }),
+        makePerson({ id: "me", father: "dad" }),
+      ];
+      expect(getRelationshipLabel("me", "ggf", f).zhTW).toBe("曾祖父");
+    });
+
+    it("maternal great-grandmother → 外曾祖母", () => {
+      const f: Person[] = [
+        makePerson({ id: "ggm", gender: "female" }),
+        makePerson({ id: "gm", mother: "ggm", gender: "female" }),
+        makePerson({ id: "mom", mother: "gm", gender: "female" }),
+        makePerson({ id: "me", mother: "mom" }),
+      ];
+      expect(getRelationshipLabel("me", "ggm", f).zhTW).toBe("外曾祖母");
+    });
+  });
+
+  // ---- Descending: children, grandchildren, great-grandchildren ----
+  describe("Descending: children, grandchildren, great-grandchildren", () => {
+    it("son → 兒子", () => {
+      const f: Person[] = [
+        makePerson({ id: "me", gender: "male" }),
+        makePerson({ id: "son", father: "me", gender: "male" }),
+      ];
+      expect(getRelationshipLabel("me", "son", f).zhTW).toBe("兒子");
+    });
+
+    it("daughter → 女兒", () => {
+      const f: Person[] = [
+        makePerson({ id: "me", gender: "male" }),
+        makePerson({ id: "dau", father: "me", gender: "female" }),
+      ];
+      expect(getRelationshipLabel("me", "dau", f).zhTW).toBe("女兒");
+    });
+
+    it("grandson via son → 孫子", () => {
+      const f: Person[] = [
+        makePerson({ id: "me", gender: "male" }),
+        makePerson({ id: "son", father: "me", gender: "male" }),
+        makePerson({ id: "gs", father: "son", gender: "male" }),
+      ];
+      expect(getRelationshipLabel("me", "gs", f).zhTW).toBe("孫子");
+    });
+
+    it("granddaughter via son → 孫女", () => {
+      const f: Person[] = [
+        makePerson({ id: "me", gender: "male" }),
+        makePerson({ id: "son", father: "me", gender: "male" }),
+        makePerson({ id: "gd", father: "son", gender: "female" }),
+      ];
+      expect(getRelationshipLabel("me", "gd", f).zhTW).toBe("孫女");
+    });
+
+    it("grandson via daughter → 外孫", () => {
+      const f: Person[] = [
+        makePerson({ id: "me", gender: "male" }),
+        makePerson({ id: "dau", father: "me", gender: "female" }),
+        makePerson({ id: "gs", mother: "dau", gender: "male" }),
+      ];
+      expect(getRelationshipLabel("me", "gs", f).zhTW).toBe("外孫");
+    });
+
+    it("granddaughter via daughter → 外孫女", () => {
+      const f: Person[] = [
+        makePerson({ id: "me", gender: "male" }),
+        makePerson({ id: "dau", father: "me", gender: "female" }),
+        makePerson({ id: "gd", mother: "dau", gender: "female" }),
+      ];
+      expect(getRelationshipLabel("me", "gd", f).zhTW).toBe("外孫女");
+    });
+
+    it("great-grandson via son line → 曾孫", () => {
+      const f: Person[] = [
+        makePerson({ id: "me", gender: "male" }),
+        makePerson({ id: "son", father: "me", gender: "male" }),
+        makePerson({ id: "gs", father: "son", gender: "male" }),
+        makePerson({ id: "ggs", father: "gs", gender: "male" }),
+      ];
+      expect(getRelationshipLabel("me", "ggs", f).zhTW).toBe("曾孫");
+    });
+
+    it("great-granddaughter via daughter line → 外曾孫女", () => {
+      const f: Person[] = [
+        makePerson({ id: "me", gender: "male" }),
+        makePerson({ id: "dau", father: "me", gender: "female" }),
+        makePerson({ id: "gc", mother: "dau", gender: "male" }),
+        makePerson({ id: "ggd", father: "gc", gender: "female" }),
+      ];
+      expect(getRelationshipLabel("me", "ggd", f).zhTW).toBe("外曾孫女");
+    });
+  });
+
+  // ---- Same-generation: siblings, cousins, in-laws ----
+  describe("Same-generation: siblings, cousins, in-laws", () => {
+    it("elder brother → 哥哥", () => {
+      const f: Person[] = [
+        makePerson({ id: "dad", gender: "male" }),
+        makePerson({ id: "mom", gender: "female", spouse: "dad" }),
+        makePerson({ id: "bro", father: "dad", mother: "mom", birthOrder: 1, gender: "male" }),
+        makePerson({ id: "me", father: "dad", mother: "mom", birthOrder: 2 }),
+      ];
+      expect(getRelationshipLabel("me", "bro", f).zhTW).toBe("哥哥");
+    });
+
+    it("younger sister → 妹妹", () => {
+      const f: Person[] = [
+        makePerson({ id: "dad", gender: "male" }),
+        makePerson({ id: "mom", gender: "female", spouse: "dad" }),
+        makePerson({ id: "me", father: "dad", mother: "mom", birthOrder: 1 }),
+        makePerson({ id: "sis", father: "dad", mother: "mom", birthOrder: 2, gender: "female" }),
+      ];
+      expect(getRelationshipLabel("me", "sis", f).zhTW).toBe("妹妹");
+    });
+
+    // Cousin matrix — 8 combinations: {paternal-uncle-child=堂, others=表} × {male/female} × {elder/younger}
+    const cousinFixture = (options: {
+      parentEdge: "father" | "mother";
+      uncleAuntGender: "male" | "female";
+      cousinGender: "male" | "female";
+      cousinElder: boolean;
+    }): Person[] => {
+      const myYear = "1990";
+      const cousinYear = options.cousinElder ? "1985" : "1995";
+      return [
+        makePerson({ id: "gf", gender: "male" }),
+        makePerson({ id: "gm", gender: "female", spouse: "gf" }),
+        makePerson({
+          id: "parent",
+          father: "gf",
+          mother: "gm",
+          birthOrder: 1,
+          gender: options.parentEdge === "father" ? "male" : "female",
+        }),
+        makePerson({
+          id: "uncleAunt",
+          father: "gf",
+          mother: "gm",
+          birthOrder: 2,
+          gender: options.uncleAuntGender,
+        }),
+        makePerson({
+          id: "me",
+          [options.parentEdge]: "parent",
+          birthDate: myYear,
+          gender: "male",
+        } as Partial<Person>),
+        makePerson({
+          id: "cousin",
+          father: options.uncleAuntGender === "male" ? "uncleAunt" : "",
+          mother: options.uncleAuntGender === "female" ? "uncleAunt" : "",
+          birthDate: cousinYear,
+          gender: options.cousinGender,
+        }),
+      ];
+    };
+
+    it("paternal uncle's elder son → 堂兄", () => {
+      const f = cousinFixture({ parentEdge: "father", uncleAuntGender: "male", cousinGender: "male", cousinElder: true });
+      expect(getRelationshipLabel("me", "cousin", f).zhTW).toBe("堂兄");
+    });
+
+    it("paternal uncle's younger daughter → 堂妹", () => {
+      const f = cousinFixture({ parentEdge: "father", uncleAuntGender: "male", cousinGender: "female", cousinElder: false });
+      expect(getRelationshipLabel("me", "cousin", f).zhTW).toBe("堂妹");
+    });
+
+    it("paternal aunt's elder son → 表兄 (not 堂)", () => {
+      const f = cousinFixture({ parentEdge: "father", uncleAuntGender: "female", cousinGender: "male", cousinElder: true });
+      expect(getRelationshipLabel("me", "cousin", f).zhTW).toBe("表兄");
+    });
+
+    it("maternal uncle's younger son → 表弟", () => {
+      const f = cousinFixture({ parentEdge: "mother", uncleAuntGender: "male", cousinGender: "male", cousinElder: false });
+      expect(getRelationshipLabel("me", "cousin", f).zhTW).toBe("表弟");
+    });
+
+    it("maternal aunt's elder daughter → 表姊", () => {
+      const f = cousinFixture({ parentEdge: "mother", uncleAuntGender: "female", cousinGender: "female", cousinElder: true });
+      expect(getRelationshipLabel("me", "cousin", f).zhTW).toBe("表姊");
+    });
+
+    it("wife's elder sister → 大姨子 (focused male)", () => {
+      const f: Person[] = [
+        makePerson({ id: "wdad", gender: "male" }),
+        makePerson({ id: "wmom", gender: "female", spouse: "wdad" }),
+        makePerson({ id: "me", spouse: "wife", gender: "male" }),
+        makePerson({ id: "wife", spouse: "me", father: "wdad", mother: "wmom", birthOrder: 2, gender: "female" }),
+        makePerson({ id: "wsis", father: "wdad", mother: "wmom", birthOrder: 1, gender: "female" }),
+      ];
+      expect(getRelationshipLabel("me", "wsis", f).zhTW).toBe("大姨子");
+    });
+
+    it("husband's elder brother → 大伯 (focused female)", () => {
+      const f: Person[] = [
+        makePerson({ id: "hdad", gender: "male" }),
+        makePerson({ id: "hmom", gender: "female", spouse: "hdad" }),
+        makePerson({ id: "me", spouse: "husband", gender: "female" }),
+        makePerson({ id: "husband", spouse: "me", father: "hdad", mother: "hmom", birthOrder: 2, gender: "male" }),
+        makePerson({ id: "hbro", father: "hdad", mother: "hmom", birthOrder: 1, gender: "male" }),
+      ];
+      expect(getRelationshipLabel("me", "hbro", f).zhTW).toBe("大伯");
+    });
+
+    it("妯娌 (husband's brother's wife) — both female", () => {
+      const f: Person[] = [
+        makePerson({ id: "fil", gender: "male" }),
+        makePerson({ id: "mil", gender: "female", spouse: "fil" }),
+        makePerson({ id: "husband", father: "fil", mother: "mil", spouse: "me", gender: "male", birthOrder: 1 }),
+        makePerson({ id: "me", spouse: "husband", gender: "female" }),
+        makePerson({ id: "hbro", father: "fil", mother: "mil", spouse: "sil", gender: "male", birthOrder: 2 }),
+        makePerson({ id: "sil", spouse: "hbro", gender: "female" }),
+      ];
+      expect(getRelationshipLabel("me", "sil", f).zhTW).toBe("妯娌");
+    });
+
+    it("連襟 (wife's sister's husband) — both male", () => {
+      const f: Person[] = [
+        makePerson({ id: "wdad", gender: "male" }),
+        makePerson({ id: "wmom", gender: "female", spouse: "wdad" }),
+        makePerson({ id: "wife", father: "wdad", mother: "wmom", spouse: "me", gender: "female", birthOrder: 1 }),
+        makePerson({ id: "me", spouse: "wife", gender: "male" }),
+        makePerson({ id: "wsis", father: "wdad", mother: "wmom", spouse: "bil", gender: "female", birthOrder: 2 }),
+        makePerson({ id: "bil", spouse: "wsis", gender: "male" }),
+      ];
+      expect(getRelationshipLabel("me", "bil", f).zhTW).toBe("連襟");
+    });
+  });
+
+  // ---- Parent's generation: uncles, aunts, and their spouses ----
+  describe("Parent's generation: uncles, aunts, and their spouses", () => {
+    it("father's elder brother → 伯父", () => {
+      const f: Person[] = [
+        makePerson({ id: "gf", gender: "male" }),
+        makePerson({ id: "gm", gender: "female", spouse: "gf" }),
+        makePerson({ id: "uncle", father: "gf", mother: "gm", birthOrder: 1, gender: "male" }),
+        makePerson({ id: "dad", father: "gf", mother: "gm", birthOrder: 2, gender: "male" }),
+        makePerson({ id: "me", father: "dad" }),
+      ];
+      expect(getRelationshipLabel("me", "uncle", f).zhTW).toBe("伯父");
+    });
+
+    it("father's younger brother → 叔叔", () => {
+      const f: Person[] = [
+        makePerson({ id: "gf", gender: "male" }),
+        makePerson({ id: "gm", gender: "female", spouse: "gf" }),
+        makePerson({ id: "dad", father: "gf", mother: "gm", birthOrder: 1, gender: "male" }),
+        makePerson({ id: "uncle", father: "gf", mother: "gm", birthOrder: 2, gender: "male" }),
+        makePerson({ id: "me", father: "dad" }),
+      ];
+      expect(getRelationshipLabel("me", "uncle", f).zhTW).toBe("叔叔");
+    });
+
+    it("father's sister → 姑姑", () => {
+      const f: Person[] = [
+        makePerson({ id: "gf", gender: "male" }),
+        makePerson({ id: "gm", gender: "female", spouse: "gf" }),
+        makePerson({ id: "dad", father: "gf", mother: "gm", gender: "male" }),
+        makePerson({ id: "aunt", father: "gf", mother: "gm", gender: "female" }),
+        makePerson({ id: "me", father: "dad" }),
+      ];
+      expect(getRelationshipLabel("me", "aunt", f).zhTW).toBe("姑姑");
+    });
+
+    it("mother's brother → 舅舅", () => {
+      const f: Person[] = [
+        makePerson({ id: "mgf", gender: "male" }),
+        makePerson({ id: "mgm", gender: "female", spouse: "mgf" }),
+        makePerson({ id: "mom", father: "mgf", mother: "mgm", gender: "female" }),
+        makePerson({ id: "uncle", father: "mgf", mother: "mgm", gender: "male" }),
+        makePerson({ id: "me", mother: "mom" }),
+      ];
+      expect(getRelationshipLabel("me", "uncle", f).zhTW).toBe("舅舅");
+    });
+
+    it("mother's sister → 阿姨", () => {
+      const f: Person[] = [
+        makePerson({ id: "mgf", gender: "male" }),
+        makePerson({ id: "mgm", gender: "female", spouse: "mgf" }),
+        makePerson({ id: "mom", father: "mgf", mother: "mgm", gender: "female" }),
+        makePerson({ id: "aunt", father: "mgf", mother: "mgm", gender: "female" }),
+        makePerson({ id: "me", mother: "mom" }),
+      ];
+      expect(getRelationshipLabel("me", "aunt", f).zhTW).toBe("阿姨");
+    });
+
+    it("father's elder brother's wife → 伯母", () => {
+      const f: Person[] = [
+        makePerson({ id: "gf", gender: "male" }),
+        makePerson({ id: "gm", gender: "female", spouse: "gf" }),
+        makePerson({ id: "eu", father: "gf", mother: "gm", birthOrder: 1, gender: "male", spouse: "eu_w" }),
+        makePerson({ id: "dad", father: "gf", mother: "gm", birthOrder: 2, gender: "male" }),
+        makePerson({ id: "eu_w", spouse: "eu", gender: "female" }),
+        makePerson({ id: "me", father: "dad" }),
+      ];
+      expect(getRelationshipLabel("me", "eu_w", f).zhTW).toBe("伯母");
+    });
+
+    it("father's younger brother's wife → 嬸嬸", () => {
+      const f: Person[] = [
+        makePerson({ id: "gf", gender: "male" }),
+        makePerson({ id: "gm", gender: "female", spouse: "gf" }),
+        makePerson({ id: "dad", father: "gf", mother: "gm", birthOrder: 1, gender: "male" }),
+        makePerson({ id: "yu", father: "gf", mother: "gm", birthOrder: 2, gender: "male", spouse: "yu_w" }),
+        makePerson({ id: "yu_w", spouse: "yu", gender: "female" }),
+        makePerson({ id: "me", father: "dad" }),
+      ];
+      expect(getRelationshipLabel("me", "yu_w", f).zhTW).toBe("嬸嬸");
+    });
+
+    it("father's sister's husband → 姑丈", () => {
+      const f: Person[] = [
+        makePerson({ id: "gf", gender: "male" }),
+        makePerson({ id: "gm", gender: "female", spouse: "gf" }),
+        makePerson({ id: "dad", father: "gf", mother: "gm", gender: "male" }),
+        makePerson({ id: "aunt", father: "gf", mother: "gm", gender: "female", spouse: "gz" }),
+        makePerson({ id: "gz", spouse: "aunt", gender: "male" }),
+        makePerson({ id: "me", father: "dad" }),
+      ];
+      expect(getRelationshipLabel("me", "gz", f).zhTW).toBe("姑丈");
+    });
+
+    it("mother's brother's wife → 舅媽", () => {
+      const f: Person[] = [
+        makePerson({ id: "mgf", gender: "male" }),
+        makePerson({ id: "mgm", gender: "female", spouse: "mgf" }),
+        makePerson({ id: "mom", father: "mgf", mother: "mgm", gender: "female" }),
+        makePerson({ id: "mu", father: "mgf", mother: "mgm", gender: "male", spouse: "mu_w" }),
+        makePerson({ id: "mu_w", spouse: "mu", gender: "female" }),
+        makePerson({ id: "me", mother: "mom" }),
+      ];
+      expect(getRelationshipLabel("me", "mu_w", f).zhTW).toBe("舅媽");
+    });
+
+    it("mother's sister's husband → 姨丈", () => {
+      const f: Person[] = [
+        makePerson({ id: "mgf", gender: "male" }),
+        makePerson({ id: "mgm", gender: "female", spouse: "mgf" }),
+        makePerson({ id: "mom", father: "mgf", mother: "mgm", gender: "female" }),
+        makePerson({ id: "ma", father: "mgf", mother: "mgm", gender: "female", spouse: "yz" }),
+        makePerson({ id: "yz", spouse: "ma", gender: "male" }),
+        makePerson({ id: "me", mother: "mom" }),
+      ];
+      expect(getRelationshipLabel("me", "yz", f).zhTW).toBe("姨丈");
+    });
+  });
+
+  // ---- Grandparent's generation: great-uncles, great-aunts, and their spouses ----
+  describe("Grandparent's generation: great-uncles, great-aunts, and their spouses", () => {
+    // Helper for a grandparent-sibling fixture.
+    const gpSiblingFixture = (options: {
+      line: [("father" | "mother"), ("father" | "mother")]; // e.g. ["father","father"] = paternal grandpa
+      siblingGender: "male" | "female";
+      elder?: boolean;
+    }): Person[] => {
+      const [parentEdge, gpEdge] = options.line;
+      const gpYear = "1940";
+      const sibYear = options.elder === false ? "1945" : "1935";
+      return [
+        makePerson({ id: "ggf", gender: "male" }),
+        makePerson({ id: "ggm", gender: "female", spouse: "ggf" }),
+        makePerson({
+          id: "gp",
+          father: "ggf",
+          mother: "ggm",
+          birthOrder: 2,
+          gender: gpEdge === "father" ? "male" : "female",
+          birthDate: gpYear,
+        }),
+        makePerson({
+          id: "sib",
+          father: "ggf",
+          mother: "ggm",
+          birthOrder: options.elder === false ? 3 : 1,
+          gender: options.siblingGender,
+          birthDate: sibYear,
+        }),
+        makePerson({
+          id: "parent",
+          [gpEdge]: "gp",
+          gender: parentEdge === "father" ? "male" : "female",
+        } as Partial<Person>),
+        makePerson({
+          id: "me",
+          [parentEdge]: "parent",
+        } as Partial<Person>),
+      ];
+    };
+
+    // Paternal grandpa line — uses 伯公/叔公/姑婆
+    it("[father, father, sibling] male elder → 伯公", () => {
+      const f = gpSiblingFixture({ line: ["father", "father"], siblingGender: "male", elder: true });
+      expect(getRelationshipLabel("me", "sib", f).zhTW).toBe("伯公");
+    });
+
+    it("[father, father, sibling] male younger → 叔公", () => {
+      const f = gpSiblingFixture({ line: ["father", "father"], siblingGender: "male", elder: false });
+      expect(getRelationshipLabel("me", "sib", f).zhTW).toBe("叔公");
+    });
+
+    it("[father, father, sibling] female → 姑婆", () => {
+      const f = gpSiblingFixture({ line: ["father", "father"], siblingGender: "female" });
+      expect(getRelationshipLabel("me", "sib", f).zhTW).toBe("姑婆");
+    });
+
+    // Other grandparent lines — collapse to 舅公/姨婆
+    it("[father, mother, sibling] male → 舅公 (father's mom's brother)", () => {
+      const f = gpSiblingFixture({ line: ["father", "mother"], siblingGender: "male" });
+      expect(getRelationshipLabel("me", "sib", f).zhTW).toBe("舅公");
+    });
+
+    it("[father, mother, sibling] female → 姨婆 (father's mom's sister)", () => {
+      const f = gpSiblingFixture({ line: ["father", "mother"], siblingGender: "female" });
+      expect(getRelationshipLabel("me", "sib", f).zhTW).toBe("姨婆");
+    });
+
+    it("[mother, father, sibling] male → 舅公 (mother's dad's brother)", () => {
+      const f = gpSiblingFixture({ line: ["mother", "father"], siblingGender: "male" });
+      expect(getRelationshipLabel("me", "sib", f).zhTW).toBe("舅公");
+    });
+
+    it("[mother, father, sibling] female → 姨婆", () => {
+      const f = gpSiblingFixture({ line: ["mother", "father"], siblingGender: "female" });
+      expect(getRelationshipLabel("me", "sib", f).zhTW).toBe("姨婆");
+    });
+
+    // User-flagged maternal grandma line — commonly asked, must not fall through to 親戚
+    it("[mother, mother, sibling] male → 舅公 (maternal grandma's brother)", () => {
+      const f = gpSiblingFixture({ line: ["mother", "mother"], siblingGender: "male" });
+      expect(getRelationshipLabel("me", "sib", f).zhTW).toBe("舅公");
+    });
+
+    it("[mother, mother, sibling] female → 姨婆 (maternal grandma's sister)", () => {
+      const f = gpSiblingFixture({ line: ["mother", "mother"], siblingGender: "female" });
+      expect(getRelationshipLabel("me", "sib", f).zhTW).toBe("姨婆");
+    });
+
+    // Great-uncle / great-aunt spouses — length 4
+    it("paternal grandpa's elder brother's wife → 伯婆", () => {
+      const f: Person[] = [
+        makePerson({ id: "ggf", gender: "male" }),
+        makePerson({ id: "ggm", gender: "female", spouse: "ggf" }),
+        makePerson({ id: "pgf", father: "ggf", mother: "ggm", gender: "male", birthDate: "1940", birthOrder: 2 }),
+        makePerson({ id: "gu", father: "ggf", mother: "ggm", gender: "male", birthDate: "1935", birthOrder: 1, spouse: "gu_w" }),
+        makePerson({ id: "gu_w", spouse: "gu", gender: "female" }),
+        makePerson({ id: "dad", father: "pgf", gender: "male" }),
+        makePerson({ id: "me", father: "dad" }),
+      ];
+      expect(getRelationshipLabel("me", "gu_w", f).zhTW).toBe("伯婆");
+    });
+
+    it("paternal grandpa's younger brother's wife → 叔婆", () => {
+      const f: Person[] = [
+        makePerson({ id: "ggf", gender: "male" }),
+        makePerson({ id: "ggm", gender: "female", spouse: "ggf" }),
+        makePerson({ id: "pgf", father: "ggf", mother: "ggm", gender: "male", birthDate: "1940", birthOrder: 1 }),
+        makePerson({ id: "gu", father: "ggf", mother: "ggm", gender: "male", birthDate: "1945", birthOrder: 2, spouse: "gu_w" }),
+        makePerson({ id: "gu_w", spouse: "gu", gender: "female" }),
+        makePerson({ id: "dad", father: "pgf", gender: "male" }),
+        makePerson({ id: "me", father: "dad" }),
+      ];
+      expect(getRelationshipLabel("me", "gu_w", f).zhTW).toBe("叔婆");
+    });
+
+    it("paternal grandpa's sister's husband → 姑丈公", () => {
+      const f: Person[] = [
+        makePerson({ id: "ggf", gender: "male" }),
+        makePerson({ id: "ggm", gender: "female", spouse: "ggf" }),
+        makePerson({ id: "pgf", father: "ggf", mother: "ggm", gender: "male" }),
+        makePerson({ id: "ga", father: "ggf", mother: "ggm", gender: "female", spouse: "ga_h" }),
+        makePerson({ id: "ga_h", spouse: "ga", gender: "male" }),
+        makePerson({ id: "dad", father: "pgf", gender: "male" }),
+        makePerson({ id: "me", father: "dad" }),
+      ];
+      expect(getRelationshipLabel("me", "ga_h", f).zhTW).toBe("姑丈公");
+    });
+
+    it("maternal grandma's brother's wife → 舅婆", () => {
+      const f: Person[] = [
+        makePerson({ id: "ggf", gender: "male" }),
+        makePerson({ id: "ggm", gender: "female", spouse: "ggf" }),
+        makePerson({ id: "mgm", father: "ggf", mother: "ggm", gender: "female" }),
+        makePerson({ id: "gu", father: "ggf", mother: "ggm", gender: "male", spouse: "gu_w" }),
+        makePerson({ id: "gu_w", spouse: "gu", gender: "female" }),
+        makePerson({ id: "mom", mother: "mgm", gender: "female" }),
+        makePerson({ id: "me", mother: "mom" }),
+      ];
+      expect(getRelationshipLabel("me", "gu_w", f).zhTW).toBe("舅婆");
+    });
+
+    it("maternal grandma's sister's husband → 姨丈公", () => {
+      const f: Person[] = [
+        makePerson({ id: "ggf", gender: "male" }),
+        makePerson({ id: "ggm", gender: "female", spouse: "ggf" }),
+        makePerson({ id: "mgm", father: "ggf", mother: "ggm", gender: "female" }),
+        makePerson({ id: "ga", father: "ggf", mother: "ggm", gender: "female", spouse: "ga_h" }),
+        makePerson({ id: "ga_h", spouse: "ga", gender: "male" }),
+        makePerson({ id: "mom", mother: "mgm", gender: "female" }),
+        makePerson({ id: "me", mother: "mom" }),
+      ];
+      expect(getRelationshipLabel("me", "ga_h", f).zhTW).toBe("姨丈公");
+    });
+  });
+
+  // ---- Child's generation: nephews, nieces, and their spouses; grandchildren's spouses ----
+  describe("Child's generation: nephews, nieces, and their spouses; grandchildren's spouses", () => {
+    it("brother's son → 姪子", () => {
+      const f: Person[] = [
+        makePerson({ id: "dad", gender: "male" }),
+        makePerson({ id: "mom", gender: "female", spouse: "dad" }),
+        makePerson({ id: "me", father: "dad", mother: "mom", birthOrder: 1 }),
+        makePerson({ id: "bro", father: "dad", mother: "mom", birthOrder: 2, gender: "male" }),
+        makePerson({ id: "n", father: "bro", gender: "male" }),
+      ];
+      expect(getRelationshipLabel("me", "n", f).zhTW).toBe("姪子");
+    });
+
+    it("sister's daughter → 外甥女", () => {
+      const f: Person[] = [
+        makePerson({ id: "dad", gender: "male" }),
+        makePerson({ id: "mom", gender: "female", spouse: "dad" }),
+        makePerson({ id: "me", father: "dad", mother: "mom", birthOrder: 1 }),
+        makePerson({ id: "sis", father: "dad", mother: "mom", birthOrder: 2, gender: "female" }),
+        makePerson({ id: "n", mother: "sis", gender: "female" }),
+      ];
+      expect(getRelationshipLabel("me", "n", f).zhTW).toBe("外甥女");
+    });
+
+    // Nephew/niece's spouse — 姪媳, 姪女婿, 外甥媳, 外甥女婿
+    it("brother's son's wife → 姪媳", () => {
+      const f: Person[] = [
+        makePerson({ id: "dad", gender: "male" }),
+        makePerson({ id: "mom", gender: "female", spouse: "dad" }),
+        makePerson({ id: "me", father: "dad", mother: "mom", birthOrder: 1 }),
+        makePerson({ id: "bro", father: "dad", mother: "mom", birthOrder: 2, gender: "male" }),
+        makePerson({ id: "n", father: "bro", gender: "male", spouse: "n_w" }),
+        makePerson({ id: "n_w", spouse: "n", gender: "female" }),
+      ];
+      expect(getRelationshipLabel("me", "n_w", f).zhTW).toBe("姪媳");
+    });
+
+    it("brother's daughter's husband → 姪女婿", () => {
+      const f: Person[] = [
+        makePerson({ id: "dad", gender: "male" }),
+        makePerson({ id: "mom", gender: "female", spouse: "dad" }),
+        makePerson({ id: "me", father: "dad", mother: "mom", birthOrder: 1 }),
+        makePerson({ id: "bro", father: "dad", mother: "mom", birthOrder: 2, gender: "male" }),
+        makePerson({ id: "n", father: "bro", gender: "female", spouse: "n_h" }),
+        makePerson({ id: "n_h", spouse: "n", gender: "male" }),
+      ];
+      expect(getRelationshipLabel("me", "n_h", f).zhTW).toBe("姪女婿");
+    });
+
+    it("sister's son's wife → 外甥媳", () => {
+      const f: Person[] = [
+        makePerson({ id: "dad", gender: "male" }),
+        makePerson({ id: "mom", gender: "female", spouse: "dad" }),
+        makePerson({ id: "me", father: "dad", mother: "mom", birthOrder: 1 }),
+        makePerson({ id: "sis", father: "dad", mother: "mom", birthOrder: 2, gender: "female" }),
+        makePerson({ id: "n", mother: "sis", gender: "male", spouse: "n_w" }),
+        makePerson({ id: "n_w", spouse: "n", gender: "female" }),
+      ];
+      expect(getRelationshipLabel("me", "n_w", f).zhTW).toBe("外甥媳");
+    });
+
+    it("sister's daughter's husband → 外甥女婿", () => {
+      const f: Person[] = [
+        makePerson({ id: "dad", gender: "male" }),
+        makePerson({ id: "mom", gender: "female", spouse: "dad" }),
+        makePerson({ id: "me", father: "dad", mother: "mom", birthOrder: 1 }),
+        makePerson({ id: "sis", father: "dad", mother: "mom", birthOrder: 2, gender: "female" }),
+        makePerson({ id: "n", mother: "sis", gender: "female", spouse: "n_h" }),
+        makePerson({ id: "n_h", spouse: "n", gender: "male" }),
+      ];
+      expect(getRelationshipLabel("me", "n_h", f).zhTW).toBe("外甥女婿");
+    });
+
+    // Grandchild's spouse — 孫媳, 孫女婿, 外孫媳, 外孫女婿
+    it("son's son's wife → 孫媳", () => {
+      const f: Person[] = [
+        makePerson({ id: "me", gender: "male" }),
+        makePerson({ id: "son", father: "me", gender: "male" }),
+        makePerson({ id: "gs", father: "son", gender: "male", spouse: "gs_w" }),
+        makePerson({ id: "gs_w", spouse: "gs", gender: "female" }),
+      ];
+      expect(getRelationshipLabel("me", "gs_w", f).zhTW).toBe("孫媳");
+    });
+
+    it("son's daughter's husband → 孫女婿", () => {
+      const f: Person[] = [
+        makePerson({ id: "me", gender: "male" }),
+        makePerson({ id: "son", father: "me", gender: "male" }),
+        makePerson({ id: "gd", father: "son", gender: "female", spouse: "gd_h" }),
+        makePerson({ id: "gd_h", spouse: "gd", gender: "male" }),
+      ];
+      expect(getRelationshipLabel("me", "gd_h", f).zhTW).toBe("孫女婿");
+    });
+
+    it("daughter's son's wife → 外孫媳", () => {
+      const f: Person[] = [
+        makePerson({ id: "me", gender: "male" }),
+        makePerson({ id: "dau", father: "me", gender: "female" }),
+        makePerson({ id: "gs", mother: "dau", gender: "male", spouse: "gs_w" }),
+        makePerson({ id: "gs_w", spouse: "gs", gender: "female" }),
+      ];
+      expect(getRelationshipLabel("me", "gs_w", f).zhTW).toBe("外孫媳");
+    });
+
+    it("daughter's daughter's husband → 外孫女婿", () => {
+      const f: Person[] = [
+        makePerson({ id: "me", gender: "male" }),
+        makePerson({ id: "dau", father: "me", gender: "female" }),
+        makePerson({ id: "gd", mother: "dau", gender: "female", spouse: "gd_h" }),
+        makePerson({ id: "gd_h", spouse: "gd", gender: "male" }),
+      ];
+      expect(getRelationshipLabel("me", "gd_h", f).zhTW).toBe("外孫女婿");
+    });
+  });
+
+  // ---- Parent's cousins (as seen by child / grandchild) ----
+  describe("Parent's cousins (as seen by child / grandchild)", () => {
+    // Father's 堂兄 (paternal grandfather's brother's son, male elder than father) → 堂伯父
+    it("father's elder 堂兄 → 堂伯父", () => {
+      const f: Person[] = [
+        makePerson({ id: "pggf", gender: "male", spouse: "pggm" }),
+        makePerson({ id: "pggm", gender: "female", spouse: "pggf" }),
+        makePerson({ id: "pgf", father: "pggf", mother: "pggm", gender: "male", birthOrder: 2 }),
+        makePerson({ id: "pgu", father: "pggf", mother: "pggm", gender: "male", birthOrder: 1 }),
+        makePerson({ id: "dad", father: "pgf", gender: "male", birthDate: "1960" }),
+        makePerson({ id: "tangBro", father: "pgu", gender: "male", birthDate: "1955" }),
+        makePerson({ id: "me", father: "dad" }),
+      ];
+      expect(getRelationshipLabel("me", "tangBro", f).zhTW).toBe("堂伯父");
+    });
+
+    it("father's younger 堂弟 → 堂叔父", () => {
+      const f: Person[] = [
+        makePerson({ id: "pggf", gender: "male", spouse: "pggm" }),
+        makePerson({ id: "pggm", gender: "female", spouse: "pggf" }),
+        makePerson({ id: "pgf", father: "pggf", mother: "pggm", gender: "male", birthOrder: 1 }),
+        makePerson({ id: "pgu", father: "pggf", mother: "pggm", gender: "male", birthOrder: 2 }),
+        makePerson({ id: "dad", father: "pgf", gender: "male", birthDate: "1960" }),
+        makePerson({ id: "tangBro", father: "pgu", gender: "male", birthDate: "1965" }),
+        makePerson({ id: "me", father: "dad" }),
+      ];
+      expect(getRelationshipLabel("me", "tangBro", f).zhTW).toBe("堂叔父");
+    });
+
+    it("father's 堂姊 → 堂姑", () => {
+      const f: Person[] = [
+        makePerson({ id: "pggf", gender: "male", spouse: "pggm" }),
+        makePerson({ id: "pggm", gender: "female", spouse: "pggf" }),
+        makePerson({ id: "pgf", father: "pggf", mother: "pggm", gender: "male" }),
+        makePerson({ id: "pgu", father: "pggf", mother: "pggm", gender: "male" }),
+        makePerson({ id: "dad", father: "pgf", gender: "male" }),
+        makePerson({ id: "tangSis", father: "pgu", gender: "female" }),
+        makePerson({ id: "me", father: "dad" }),
+      ];
+      expect(getRelationshipLabel("me", "tangSis", f).zhTW).toBe("堂姑");
+    });
+
+    // Father's 表 side — through paternal grandma, or through paternal grandpa's sister
+    it("father's 表弟 via paternal grandma's brother's line → 表叔父", () => {
+      const f: Person[] = [
+        makePerson({ id: "pggf", gender: "male", spouse: "pggm" }),
+        makePerson({ id: "pggm", gender: "female", spouse: "pggf" }),
+        makePerson({ id: "pgm", father: "pggf", mother: "pggm", gender: "female" }),
+        makePerson({ id: "pgmBro", father: "pggf", mother: "pggm", gender: "male" }),
+        makePerson({ id: "dad", mother: "pgm", gender: "male", birthDate: "1960" }),
+        makePerson({ id: "biaoBro", father: "pgmBro", gender: "male", birthDate: "1965" }),
+        makePerson({ id: "me", father: "dad" }),
+      ];
+      expect(getRelationshipLabel("me", "biaoBro", f).zhTW).toBe("表叔父");
+    });
+
+    it("father's 表姊 via paternal aunt's daughter → 表姑", () => {
+      const f: Person[] = [
+        makePerson({ id: "pggf", gender: "male", spouse: "pggm" }),
+        makePerson({ id: "pggm", gender: "female", spouse: "pggf" }),
+        makePerson({ id: "pgf", father: "pggf", mother: "pggm", gender: "male" }),
+        makePerson({ id: "pga", father: "pggf", mother: "pggm", gender: "female" }),
+        makePerson({ id: "dad", father: "pgf", gender: "male" }),
+        makePerson({ id: "biaoSis", mother: "pga", gender: "female" }),
+        makePerson({ id: "me", father: "dad" }),
+      ];
+      expect(getRelationshipLabel("me", "biaoSis", f).zhTW).toBe("表姑");
+    });
+
+    it("mother's 表兄 → 表舅", () => {
+      const f: Person[] = [
+        makePerson({ id: "mggf", gender: "male", spouse: "mggm" }),
+        makePerson({ id: "mggm", gender: "female", spouse: "mggf" }),
+        makePerson({ id: "mgf", father: "mggf", mother: "mggm", gender: "male" }),
+        makePerson({ id: "mgu", father: "mggf", mother: "mggm", gender: "male" }),
+        makePerson({ id: "mom", father: "mgf", gender: "female" }),
+        makePerson({ id: "biaoBro", father: "mgu", gender: "male" }),
+        makePerson({ id: "me", mother: "mom" }),
+      ];
+      expect(getRelationshipLabel("me", "biaoBro", f).zhTW).toBe("表舅");
+    });
+
+    it("mother's 表姊 → 表姨", () => {
+      const f: Person[] = [
+        makePerson({ id: "mggf", gender: "male", spouse: "mggm" }),
+        makePerson({ id: "mggm", gender: "female", spouse: "mggf" }),
+        makePerson({ id: "mgf", father: "mggf", mother: "mggm", gender: "male" }),
+        makePerson({ id: "mga", father: "mggf", mother: "mggm", gender: "female" }),
+        makePerson({ id: "mom", father: "mgf", gender: "female" }),
+        makePerson({ id: "biaoSis", mother: "mga", gender: "female" }),
+        makePerson({ id: "me", mother: "mom" }),
+      ];
+      expect(getRelationshipLabel("me", "biaoSis", f).zhTW).toBe("表姨");
+    });
+  });
+
+  // ---- Cousin's spouse ----
+  describe("Cousin's spouse", () => {
+    // 堂 side — paternal uncle's child line
+    it("paternal uncle's elder son's wife → 堂嫂", () => {
+      const f: Person[] = [
+        makePerson({ id: "gf", gender: "male" }),
+        makePerson({ id: "gm", gender: "female", spouse: "gf" }),
+        makePerson({ id: "dad", father: "gf", mother: "gm", birthOrder: 2, gender: "male" }),
+        makePerson({ id: "uncle", father: "gf", mother: "gm", birthOrder: 1, gender: "male" }),
+        makePerson({ id: "me", father: "dad", birthDate: "1990", gender: "male" }),
+        makePerson({ id: "cousin", father: "uncle", birthDate: "1985", gender: "male", spouse: "cw" }),
+        makePerson({ id: "cw", spouse: "cousin", gender: "female" }),
+      ];
+      expect(getRelationshipLabel("me", "cw", f).zhTW).toBe("堂嫂");
+    });
+
+    it("paternal uncle's younger son's wife → 堂弟媳", () => {
+      const f: Person[] = [
+        makePerson({ id: "gf", gender: "male" }),
+        makePerson({ id: "gm", gender: "female", spouse: "gf" }),
+        makePerson({ id: "dad", father: "gf", mother: "gm", birthOrder: 1, gender: "male" }),
+        makePerson({ id: "uncle", father: "gf", mother: "gm", birthOrder: 2, gender: "male" }),
+        makePerson({ id: "me", father: "dad", birthDate: "1990", gender: "male" }),
+        makePerson({ id: "cousin", father: "uncle", birthDate: "1995", gender: "male", spouse: "cw" }),
+        makePerson({ id: "cw", spouse: "cousin", gender: "female" }),
+      ];
+      expect(getRelationshipLabel("me", "cw", f).zhTW).toBe("堂弟媳");
+    });
+
+    it("paternal uncle's elder daughter's husband → 堂姊夫", () => {
+      const f: Person[] = [
+        makePerson({ id: "gf", gender: "male" }),
+        makePerson({ id: "gm", gender: "female", spouse: "gf" }),
+        makePerson({ id: "dad", father: "gf", mother: "gm", birthOrder: 2, gender: "male" }),
+        makePerson({ id: "uncle", father: "gf", mother: "gm", birthOrder: 1, gender: "male" }),
+        makePerson({ id: "me", father: "dad", birthDate: "1990", gender: "male" }),
+        makePerson({ id: "cousin", father: "uncle", birthDate: "1985", gender: "female", spouse: "ch" }),
+        makePerson({ id: "ch", spouse: "cousin", gender: "male" }),
+      ];
+      expect(getRelationshipLabel("me", "ch", f).zhTW).toBe("堂姊夫");
+    });
+
+    it("paternal uncle's younger daughter's husband → 堂妹夫", () => {
+      const f: Person[] = [
+        makePerson({ id: "gf", gender: "male" }),
+        makePerson({ id: "gm", gender: "female", spouse: "gf" }),
+        makePerson({ id: "dad", father: "gf", mother: "gm", birthOrder: 1, gender: "male" }),
+        makePerson({ id: "uncle", father: "gf", mother: "gm", birthOrder: 2, gender: "male" }),
+        makePerson({ id: "me", father: "dad", birthDate: "1990", gender: "male" }),
+        makePerson({ id: "cousin", father: "uncle", birthDate: "1995", gender: "female", spouse: "ch" }),
+        makePerson({ id: "ch", spouse: "cousin", gender: "male" }),
+      ];
+      expect(getRelationshipLabel("me", "ch", f).zhTW).toBe("堂妹夫");
+    });
+
+    // 表 side — paternal aunt's child, or maternal side
+    it("paternal aunt's elder son's wife → 表嫂", () => {
+      const f: Person[] = [
+        makePerson({ id: "gf", gender: "male" }),
+        makePerson({ id: "gm", gender: "female", spouse: "gf" }),
+        makePerson({ id: "dad", father: "gf", mother: "gm", gender: "male" }),
+        makePerson({ id: "aunt", father: "gf", mother: "gm", gender: "female" }),
+        makePerson({ id: "me", father: "dad", birthDate: "1990", gender: "male" }),
+        makePerson({ id: "cousin", mother: "aunt", birthDate: "1985", gender: "male", spouse: "cw" }),
+        makePerson({ id: "cw", spouse: "cousin", gender: "female" }),
+      ];
+      expect(getRelationshipLabel("me", "cw", f).zhTW).toBe("表嫂");
+    });
+
+    it("maternal uncle's younger son's wife → 表弟媳", () => {
+      const f: Person[] = [
+        makePerson({ id: "mgf", gender: "male" }),
+        makePerson({ id: "mgm", gender: "female", spouse: "mgf" }),
+        makePerson({ id: "mom", father: "mgf", mother: "mgm", gender: "female" }),
+        makePerson({ id: "uncle", father: "mgf", mother: "mgm", gender: "male" }),
+        makePerson({ id: "me", mother: "mom", birthDate: "1990", gender: "male" }),
+        makePerson({ id: "cousin", father: "uncle", birthDate: "1995", gender: "male", spouse: "cw" }),
+        makePerson({ id: "cw", spouse: "cousin", gender: "female" }),
+      ];
+      expect(getRelationshipLabel("me", "cw", f).zhTW).toBe("表弟媳");
+    });
+
+    it("maternal aunt's elder daughter's husband → 表姊夫", () => {
+      const f: Person[] = [
+        makePerson({ id: "mgf", gender: "male" }),
+        makePerson({ id: "mgm", gender: "female", spouse: "mgf" }),
+        makePerson({ id: "mom", father: "mgf", mother: "mgm", gender: "female" }),
+        makePerson({ id: "aunt", father: "mgf", mother: "mgm", gender: "female" }),
+        makePerson({ id: "me", mother: "mom", birthDate: "1990", gender: "male" }),
+        makePerson({ id: "cousin", mother: "aunt", birthDate: "1985", gender: "female", spouse: "ch" }),
+        makePerson({ id: "ch", spouse: "cousin", gender: "male" }),
+      ];
+      expect(getRelationshipLabel("me", "ch", f).zhTW).toBe("表姊夫");
+    });
+
+    it("maternal uncle's younger daughter's husband → 表妹夫", () => {
+      const f: Person[] = [
+        makePerson({ id: "mgf", gender: "male" }),
+        makePerson({ id: "mgm", gender: "female", spouse: "mgf" }),
+        makePerson({ id: "mom", father: "mgf", mother: "mgm", gender: "female" }),
+        makePerson({ id: "uncle", father: "mgf", mother: "mgm", gender: "male" }),
+        makePerson({ id: "me", mother: "mom", birthDate: "1990", gender: "male" }),
+        makePerson({ id: "cousin", father: "uncle", birthDate: "1995", gender: "female", spouse: "ch" }),
+        makePerson({ id: "ch", spouse: "cousin", gender: "male" }),
+      ];
+      expect(getRelationshipLabel("me", "ch", f).zhTW).toBe("表妹夫");
+    });
+  });
+
+  // ---- Same-year tiebreak with full birthDate ----
+  describe("Same-year tiebreak with full birthDate", () => {
+    it("堂姊 vs 堂妹 resolved by YYYYMMDD when both cousins share a year", () => {
+      const f: Person[] = [
+        makePerson({ id: "gf", gender: "male" }),
+        makePerson({ id: "gm", gender: "female", spouse: "gf" }),
+        makePerson({ id: "dad", father: "gf", mother: "gm", birthOrder: 1, gender: "male" }),
+        makePerson({ id: "uncle", father: "gf", mother: "gm", birthOrder: 2, gender: "male" }),
+        makePerson({ id: "me", father: "dad", gender: "male", birthDate: "19900615" }),
+        makePerson({ id: "cElder", father: "uncle", gender: "female", birthDate: "19900320" }),
+        makePerson({ id: "cYounger", father: "uncle", gender: "female", birthDate: "19901105" }),
+      ];
+      expect(getRelationshipLabel("me", "cElder", f).zhTW).toBe("堂姊");
+      expect(getRelationshipLabel("me", "cYounger", f).zhTW).toBe("堂妹");
+    });
+  });
+
+  // ---- Edge cases ----
+  describe("Edge cases: fallback and symmetric views", () => {
+    it("fallback 親戚 for unrelated persons", () => {
+      const f: Person[] = [
+        makePerson({ id: "a", name: "A" }),
+        makePerson({ id: "b", name: "B" }),
+      ];
+      expect(getRelationshipLabel("a", "b", f)).toEqual({ en: "Relative", zhTW: "親戚" });
+    });
+
+    it("Self returns 自己", () => {
+      const f: Person[] = [makePerson({ id: "me" })];
+      expect(getRelationshipLabel("me", "me", f)).toEqual({ en: "Self", zhTW: "自己" });
+    });
+
+    // Symmetric sanity: 姨婆 ↔ 外甥孫女 over the same scene.
+    it("maternal grandma's sister ↔ grandchild: 姨婆 vs 外甥孫女", () => {
+      const f: Person[] = [
+        makePerson({ id: "ggf", gender: "male", spouse: "ggm" }),
+        makePerson({ id: "ggm", gender: "female", spouse: "ggf" }),
+        makePerson({ id: "mgm", father: "ggf", mother: "ggm", gender: "female" }),
+        makePerson({ id: "mgm_sis", father: "ggf", mother: "ggm", gender: "female" }),
+        makePerson({ id: "mom", mother: "mgm", gender: "female" }),
+        makePerson({ id: "me", mother: "mom", gender: "female" }),
+      ];
+      expect(getRelationshipLabel("me", "mgm_sis", f).zhTW).toBe("姨婆");
+      expect(getRelationshipLabel("mgm_sis", "me", f).zhTW).toBe("外甥孫女");
+    });
+
+    // Symmetric sanity: 伯公 ↔ 姪孫 over the same scene (both handlers implemented).
+    it("伯公 ↔ 姪孫 symmetric: grandchild's grand-uncle view vs grand-uncle's grand-nephew view", () => {
+      const f: Person[] = [
+        makePerson({ id: "ggf", gender: "male", spouse: "ggm" }),
+        makePerson({ id: "ggm", gender: "female", spouse: "ggf" }),
+        makePerson({ id: "pgf", father: "ggf", mother: "ggm", gender: "male", birthOrder: 2, birthDate: "1940" }),
+        makePerson({ id: "pgu", father: "ggf", mother: "ggm", gender: "male", birthOrder: 1, birthDate: "1935" }),
+        makePerson({ id: "dad", father: "pgf", gender: "male" }),
+        makePerson({ id: "me", father: "dad", gender: "male" }),
+      ];
+      // me → pgu: father, father, sibling (male elder) → 伯公
+      expect(getRelationshipLabel("me", "pgu", f).zhTW).toBe("伯公");
+      // pgu → me: sibling, child, child (male) → 姪孫
+      expect(getRelationshipLabel("pgu", "me", f).zhTW).toBe("姪孫");
+    });
+
+    // Symmetric sanity: 姪媳 from aunt's view + 舅媽 analog via cousin's wife (both implemented).
+    it("symmetric: me sees brother's son's wife as 姪媳; brother sees her as 媳婦", () => {
+      const f: Person[] = [
+        makePerson({ id: "dad", gender: "male" }),
+        makePerson({ id: "mom", gender: "female", spouse: "dad" }),
+        makePerson({ id: "me", father: "dad", mother: "mom", birthOrder: 2, gender: "male" }),
+        makePerson({ id: "bro", father: "dad", mother: "mom", birthOrder: 1, gender: "male" }),
+        makePerson({ id: "n", father: "bro", gender: "male", spouse: "n_w" }),
+        makePerson({ id: "n_w", spouse: "n", gender: "female" }),
+      ];
+      // me → n_w: sibling, child, spouse (sibling male, niece/nephew male) → 姪媳
+      expect(getRelationshipLabel("me", "n_w", f).zhTW).toBe("姪媳");
+      // bro → n_w: child, spouse (child male) → 媳婦
+      expect(getRelationshipLabel("bro", "n_w", f).zhTW).toBe("媳婦");
+    });
+  });
+});
