@@ -1702,4 +1702,48 @@ describe("getRelationshipLabel — spouse-bridge (missing direct parent ref)", (
     // path is [father, spouse, sibling, child] → normalized to [mother, sibling, child] → 表弟 (cousin younger)
     expect(getRelationshipLabel("daughter", "cousin", f).zhTW).toBe("表弟");
   });
+
+  it("mid-path [parent, spouse] collapses: [father, mother, spouse, sibling] → [father, father, sibling] = 伯公/叔公", () => {
+    // Grandpa's record is missing — reached only via his wife. Without mid-path
+    // normalization, path [father, mother, spouse, sibling] wouldn't match any
+    // 3-edge handler and would fall to 親戚.
+    const f: Person[] = [
+      makePerson({ id: "pggf", gender: "male", spouse: "pggm" }),
+      makePerson({ id: "pggm", gender: "female", spouse: "pggf" }),
+      makePerson({ id: "pgf", father: "pggf", mother: "pggm", birthOrder: 2, gender: "male", birthDate: "1940", spouse: "pgm" }),
+      makePerson({ id: "pgf_bro", father: "pggf", mother: "pggm", birthOrder: 1, gender: "male", birthDate: "1935" }),
+      makePerson({ id: "pgm", gender: "female", spouse: "pgf" }),
+      // Dad is linked to pgm (mother) but NOT to pgf (father) — grandpa reached via spouse of grandma.
+      makePerson({ id: "dad", mother: "pgm", gender: "male" }),
+      makePerson({ id: "me", father: "dad", gender: "male" }),
+    ];
+    // Raw BFS path: me → dad(father) → pgm(mother) → pgf(spouse) → pgf_bro(sibling)
+    // edges = [father, mother, spouse, sibling]
+    // Mid-path normalization: [mother, spouse] → [father]
+    // Normalized: [father, father, sibling] → 伯公 (elder paternal grand-uncle).
+    expect(getRelationshipLabel("me", "pgf_bro", f).zhTW).toBe("伯公");
+  });
+
+  it("chained collapse: [father, spouse, mother, spouse, sibling] → [mother, father, sibling] = 舅公", () => {
+    // Two missing-parent layers: daughter's mother is unset AND wife's father is
+    // unset (only reached via wife's mother's spouse). Two spouse-bridge hops.
+    const f: Person[] = [
+      makePerson({ id: "mggf", gender: "male", spouse: "mggm" }),
+      makePerson({ id: "mggm", gender: "female", spouse: "mggf" }),
+      makePerson({ id: "mgf", father: "mggf", mother: "mggm", gender: "male", spouse: "mgm" }),
+      makePerson({ id: "mgf_bro", father: "mggf", mother: "mggm", gender: "male" }),
+      makePerson({ id: "mgm", gender: "female", spouse: "mgf" }),
+      // wife linked only to mother (mgm) — her father (mgf) missing on her record
+      makePerson({ id: "wife", mother: "mgm", gender: "female", spouse: "me" }),
+      makePerson({ id: "me", spouse: "wife", gender: "male" }),
+      // daughter linked only to father (me) — mother missing on her record
+      makePerson({ id: "daughter", father: "me", gender: "female" }),
+    ];
+    // Raw path: daughter → me(father) → wife(spouse) → mgm(mother) → mgf(spouse) → mgf_bro(sibling)
+    // edges = [father, spouse, mother, spouse, sibling]
+    // Pass 1 i=0: [father, spouse] → [mother]. Edges now [mother, mother, spouse, sibling].
+    // Pass 2 i=1 after step-back: [mother, spouse] → [father]. Edges now [mother, father, sibling].
+    // Result: maternal grandpa's brother = 舅公.
+    expect(getRelationshipLabel("daughter", "mgf_bro", f).zhTW).toBe("舅公");
+  });
 });

@@ -117,29 +117,36 @@ function findRelationshipPath(
   return null;
 }
 
-// Collapse a leading `[parent, spouse, ...]` pair into `[other_parent, ...]`.
-// In a heteronormative model the spouse of a parent IS the other parent, so
-// when BFS routes through the parent-we-have to reach a relative on the other
-// parent's side (because the direct parent reference is missing on the
-// focused person), the path looks like `[father, spouse, ...]` instead of the
-// equivalent `[mother, ...]`. Normalizing here lets every downstream handler
-// operate on the canonical short path.
+// Collapse any `[parent, spouse]` pair in the path into a single
+// `[other_parent]` edge. In a heteronormative model the spouse of a parent
+// IS the other parent, so whenever BFS routes through a parent's spouse —
+// at the start of the path (missing direct parent ref on focused), in the
+// middle (missing grandparent/ancestor ref), anywhere — the detour maps
+// back to the canonical short path. Scan repeatedly because collapsing one
+// pair can expose a new adjacent `[parent, spouse]` that also collapses.
 function normalizeSpouseBridge(
   edges: EdgeType[],
   personIds: string[]
 ): { edges: EdgeType[]; personIds: string[] } {
-  if (
-    edges.length >= 2 &&
-    (edges[0] === "father" || edges[0] === "mother") &&
-    edges[1] === "spouse"
-  ) {
-    const otherParent: EdgeType = edges[0] === "father" ? "mother" : "father";
-    return {
-      edges: [otherParent, ...edges.slice(2)],
-      personIds: [personIds[0], personIds[2], ...personIds.slice(3)],
-    };
+  const outEdges = [...edges];
+  const outIds = [...personIds];
+  let i = 0;
+  while (i < outEdges.length - 1) {
+    const a = outEdges[i];
+    const b = outEdges[i + 1];
+    if ((a === "father" || a === "mother") && b === "spouse") {
+      const otherParent: EdgeType = a === "father" ? "mother" : "father";
+      outEdges.splice(i, 2, otherParent);
+      outIds.splice(i + 1, 1);
+      // Step back one so the newly-adjacent pair (prev edge + otherParent)
+      // is rechecked — but the opposite direction [spouse, parent] is NOT a
+      // spouse-bridge, so stepping back never falsely collapses further.
+      if (i > 0) i--;
+    } else {
+      i++;
+    }
   }
-  return { edges, personIds };
+  return { edges: outEdges, personIds: outIds };
 }
 
 export function getRelationshipLabel(
