@@ -11,12 +11,34 @@ export function getSiblings(personId: string, persons: Person[]): Person[] {
   const person = persons.find((p) => p.id === personId);
   if (!person) return [];
 
-  return persons.filter(
-    (p) =>
-      p.id !== personId &&
-      ((person.father && p.father === person.father) || false) &&
-      ((person.mother && p.mother === person.mother) || false)
-  );
+  // Parent-based detection: at least one non-empty parent must match. Using
+  // OR (not AND) covers two real-world cases: (1) older generations where
+  // only one parent is in the tree — e.g., grandma's siblings where only
+  // their shared father is recorded; (2) half-siblings, which Chinese kinship
+  // still addresses as 兄/弟/姊/妹. Full-sibling pairs satisfy both conditions
+  // and are still picked up.
+  const parentBased = persons.filter((p) => {
+    if (p.id === personId) return false;
+    const fatherMatch = Boolean(person.father) && p.father === person.father;
+    const motherMatch = Boolean(person.mother) && p.mother === person.mother;
+    return fatherMatch || motherMatch;
+  });
+
+  // Explicit siblings (bidirectional): include p if either side declares
+  // the relationship. Needed for older generations where parents aren't in
+  // the tree, so strict parent-based detection would miss the link.
+  const explicitIds = new Set<string>(person.siblings ?? []);
+  for (const p of persons) {
+    if ((p.siblings ?? []).includes(personId)) explicitIds.add(p.id);
+  }
+  explicitIds.delete(personId);
+
+  // Merge, preserving parent-based entries first so their order (and the
+  // birthOrder sort callers rely on) remains stable. Explicit-only entries
+  // are appended in persons[] order.
+  const seen = new Set(parentBased.map((p) => p.id));
+  const explicit = persons.filter((p) => explicitIds.has(p.id) && !seen.has(p.id));
+  return [...parentBased, ...explicit];
 }
 
 // Infers gender from structural relationships:

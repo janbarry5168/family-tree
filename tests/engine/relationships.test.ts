@@ -55,6 +55,36 @@ describe("getSiblings", () => {
   it("returns empty for only child", () => {
     expect(getSiblings("son", family)).toHaveLength(0);
   });
+
+  it("detects siblings sharing only the father (mother unset on both)", () => {
+    // Common for older generations where only one parent is in the tree.
+    const f: Person[] = [
+      makePerson({ id: "gramps", gender: "male" }),
+      makePerson({ id: "a", father: "gramps", gender: "female" }),
+      makePerson({ id: "b", father: "gramps", gender: "female" }),
+      makePerson({ id: "c", father: "gramps", gender: "male" }),
+    ];
+    const sibs = getSiblings("a", f).map((s) => s.id);
+    expect(sibs.sort()).toEqual(["b", "c"]);
+  });
+
+  it("detects siblings sharing only the mother (father unset on both)", () => {
+    const f: Person[] = [
+      makePerson({ id: "granny", gender: "female" }),
+      makePerson({ id: "a", mother: "granny", gender: "female" }),
+      makePerson({ id: "b", mother: "granny", gender: "male" }),
+    ];
+    expect(getSiblings("a", f).map((s) => s.id)).toEqual(["b"]);
+  });
+
+  it("does NOT treat unrelated persons with empty parents as siblings", () => {
+    const f: Person[] = [
+      makePerson({ id: "a" }),
+      makePerson({ id: "b" }),
+      makePerson({ id: "c" }),
+    ];
+    expect(getSiblings("a", f)).toHaveLength(0);
+  });
 });
 
 describe("inferGender", () => {
@@ -1745,5 +1775,56 @@ describe("getRelationshipLabel — spouse-bridge (missing direct parent ref)", (
     // Pass 2 i=1 after step-back: [mother, spouse] → [father]. Edges now [mother, father, sibling].
     // Result: maternal grandpa's brother = 舅公.
     expect(getRelationshipLabel("daughter", "mgf_bro", f).zhTW).toBe("舅公");
+  });
+});
+
+describe("getRelationshipLabel — explicit siblings field (for incomplete parent data)", () => {
+  it("treats two persons as siblings when one declares the other via `siblings` array", () => {
+    // Neither has parents recorded. Declared sibling via siblings=["id"].
+    const f: Person[] = [
+      makePerson({ id: "mom", name: "Mom", gender: "female", spouse: "dad", siblings: ["mom_sis"] }),
+      makePerson({ id: "dad", name: "Dad", gender: "male", spouse: "mom" }),
+      makePerson({ id: "mom_sis", name: "MomSister", gender: "female" }),
+      makePerson({ id: "me", name: "Me", father: "dad", mother: "mom" }),
+    ];
+    expect(getRelationshipLabel("me", "mom_sis", f).zhTW).toBe("阿姨");
+  });
+
+  it("bidirectional: works if the OTHER person declares the sibling relationship", () => {
+    const f: Person[] = [
+      makePerson({ id: "mom", name: "Mom", gender: "female", spouse: "dad" }),
+      makePerson({ id: "dad", name: "Dad", gender: "male", spouse: "mom" }),
+      // Only mom_sis declares mom as her sibling (not mutual) — should still work
+      makePerson({ id: "mom_sis", name: "MomSister", gender: "female", siblings: ["mom"] }),
+      makePerson({ id: "me", name: "Me", father: "dad", mother: "mom" }),
+    ];
+    expect(getRelationshipLabel("me", "mom_sis", f).zhTW).toBe("阿姨");
+  });
+
+  it("covers the user's case: daughter → wife's aunt via explicit sibling on wife's mother", () => {
+    // Wife's mother has no parents recorded. Wife's aunt has no parents recorded.
+    // Linked via explicit siblings declaration.
+    const f: Person[] = [
+      makePerson({ id: "wmom", name: "WifeMom", gender: "female", spouse: "wdad", siblings: ["wmom_sis"] }),
+      makePerson({ id: "wdad", name: "WifeDad", gender: "male", spouse: "wmom" }),
+      makePerson({ id: "wmom_sis", name: "WifeMomSister", gender: "female" }),
+      makePerson({ id: "wife", name: "Wife", father: "wdad", mother: "wmom", gender: "female", spouse: "me" }),
+      makePerson({ id: "me", name: "Me", spouse: "wife", gender: "male" }),
+      makePerson({ id: "daughter", name: "Daughter", father: "me", mother: "wife", gender: "female" }),
+    ];
+    expect(getRelationshipLabel("daughter", "wmom_sis", f).zhTW).toBe("姨婆");
+  });
+
+  it("does not produce duplicate siblings when the same pair is declared on both sides", () => {
+    const f: Person[] = [
+      makePerson({ id: "a", name: "A", gender: "male", siblings: ["b"] }),
+      makePerson({ id: "b", name: "B", gender: "male", siblings: ["a"] }),
+    ];
+    // Direct getSiblings call: bidirectional declaration must not double-count.
+    const siblingsOfA = getSiblings("a", f);
+    expect(siblingsOfA.map((p) => p.id)).toEqual(["b"]);
+    // Relationship label should resolve to a sibling term, not the 親戚 fallback.
+    const label = getRelationshipLabel("a", "b", f);
+    expect(label.en).not.toBe("Relative");
   });
 });
