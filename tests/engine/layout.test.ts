@@ -254,6 +254,43 @@ describe("computeLayout", () => {
       expect(find(nodes, "mom").x).toBeGreaterThan(find(nodes, "aunt").x);
     });
 
+    it("pushes descendant-chain in-laws past spouse's real parents, not between my parents and focused", () => {
+      // Focused's son's wife's grandparent is reachable only through a chain of
+      // center descendants (son → daughter-in-law → her parent → her grandparent).
+      // Previously that grandparent fell back to "center" at their generation and
+      // squeezed between my parents and spouse's parents. Now it goes to the far
+      // right, past the real in-laws.
+      const persons = [
+        makePerson({ id: "me", father: "dad", mother: "mom", spouse: "sp" }),
+        makePerson({ id: "sp", name: "Sp", father: "spf", mother: "spm", spouse: "me" }),
+        makePerson({ id: "dad", name: "Dad", spouse: "mom" }),
+        makePerson({ id: "mom", name: "Mom", spouse: "dad" }),
+        makePerson({ id: "spf", name: "Spf", spouse: "spm" }),
+        makePerson({ id: "spm", name: "Spm", spouse: "spf" }),
+        makePerson({ id: "son", name: "Son", father: "me", mother: "sp", spouse: "dil" }),
+        makePerson({ id: "dil", name: "Dil", father: "dilf", mother: "dilm", spouse: "son" }),
+        makePerson({ id: "dilf", name: "DilF", father: "dilgf", spouse: "dilm" }),
+        makePerson({ id: "dilm", name: "DilM", spouse: "dilf" }),
+        makePerson({ id: "dilgf", name: "DilGF" }),
+      ];
+      const degrees = new Map([
+        ["me", 0], ["sp", 0],
+        ["dad", 1], ["mom", 1], ["spf", 1], ["spm", 1],
+        ["son", 1], ["dil", 1],
+        ["dilf", 3], ["dilm", 3], ["dilgf", 4],
+      ]);
+      const nodes = computeLayout(persons, "me", degrees, 4);
+
+      // At gen -1: dad/mom left, spf/spm right (both deg 1), dilgf distant in-law.
+      // dilgf must be pushed past spf/spm — not sitting between my parents and
+      // focused's x=0.
+      expect(find(nodes, "dilgf").x).toBeGreaterThan(find(nodes, "spm").x);
+      // And my parents remain on the left, closer to focused than their extreme
+      // leftmost (i.e. still the rightmost of the left block).
+      expect(find(nodes, "mom").x).toBeLessThan(0);
+      expect(find(nodes, "dad").x).toBeLessThan(find(nodes, "mom").x);
+    });
+
     it("places spouse's direct parents nearer to focused than spouse's aunts within the right block", () => {
       const persons = [
         makePerson({ id: "me", spouse: "wife" }),

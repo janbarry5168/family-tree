@@ -114,10 +114,13 @@ function computeSides(
     if (focused.mother) propagate(focused.mother, "right");
   }
 
-  // Everyone still unassigned falls back to center (rare — e.g. a descendant's
-  // in-laws whose only connection into the tree is through a spouse-of-descendant).
+  // Everyone still unassigned falls back to the RIGHT side. These are typically
+  // distant in-laws reached only through a center-descendant's spouse chain
+  // (e.g. your son's wife's grandparents). If we left them as center, they'd
+  // land between focused and their own generation's real kin, pushing direct
+  // parents to the edge. Right-side + degree ASC pushes them past real in-laws.
   for (const p of persons) {
-    if (byId.has(p.id) && !sides.has(p.id)) sides.set(p.id, "center");
+    if (byId.has(p.id) && !sides.has(p.id)) sides.set(p.id, "right");
   }
 
   return sides;
