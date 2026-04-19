@@ -76,6 +76,35 @@ describe("ConnectionLines — sibling disambiguation", () => {
     expect(Math.abs(y1A - y1B)).toBe(16);
   });
 
+  it("single-child couple: branch bar spans from coupleX to child.x (connector is not broken)", () => {
+    const persons: Person[] = [
+      makePerson({ id: "dadX", spouse: "momX" }),
+      makePerson({ id: "momX", spouse: "dadX" }),
+      makePerson({ id: "kidX", father: "dadX", mother: "momX" }),
+    ];
+    // Parents at x=-50 and x=+50 → coupleX = 0. Child offset at x=+50 (matches mom's column).
+    const nodes: LayoutNode[] = [
+      { id: "dadX", x: -50, y: 0, generation: 0, degree: 1, nodeType: "blood" },
+      { id: "momX", x:  50, y: 0, generation: 0, degree: 0, nodeType: "spouse" },
+      { id: "kidX", x:  50, y: 200, generation: 1, degree: 1, nodeType: "blood" },
+    ];
+    const personById = new Map(persons.map((p) => [p.id, p]));
+
+    const { container } = render(
+      <svg>
+        <ConnectionLines layoutNodes={nodes} personById={personById} />
+      </svg>
+    );
+
+    const branches = container.querySelectorAll('line[data-role="branch"]');
+    expect(branches.length).toBe(1);
+    const x1 = Number(branches[0].getAttribute("x1"));
+    const x2 = Number(branches[0].getAttribute("x2"));
+    // coupleX = 0, child.x = 50 → branch spans [0, 50]
+    expect(Math.min(x1, x2)).toBe(0);
+    expect(Math.max(x1, x2)).toBe(50);
+  });
+
   it("spouse bar is unchanged (still gold dashed)", () => {
     const { nodes, personById } = buildScene();
     const { container } = render(

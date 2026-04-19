@@ -102,23 +102,19 @@ export default function ConnectionLines({ layoutNodes, personById }: Props) {
 
       const sortedChildren = [...group.children].sort((a, b) => a.x - b.x);
 
-      if (sortedChildren.length > 1) {
-        lines.push(
-          <line key={`branch-${group.key}`} data-role="branch"
-            x1={sortedChildren[0].x} y1={effectiveMidY}
-            x2={sortedChildren[sortedChildren.length - 1].x} y2={effectiveMidY}
-            stroke={color} strokeWidth={1.5} opacity={0.75} />
-        );
-      } else {
-        // Single child: still emit a zero-length branch marker so tests (and
-        // future consumers) can rely on exactly one branch per couple.
-        lines.push(
-          <line key={`branch-${group.key}`} data-role="branch"
-            x1={sortedChildren[0].x} y1={effectiveMidY}
-            x2={sortedChildren[0].x} y2={effectiveMidY}
-            stroke={color} strokeWidth={1.5} opacity={0.75} />
-        );
-      }
+      const leftmostX = sortedChildren[0].x;
+      const rightmostX = sortedChildren[sortedChildren.length - 1].x;
+      const branchLeftX = Math.min(group.coupleX, leftmostX);
+      const branchRightX = Math.max(group.coupleX, rightmostX);
+
+      // Branch bar: horizontal line spanning from couple midpoint out to all
+      // children. Guarantees the trunk endpoint is on the bar for any x offset.
+      lines.push(
+        <line key={`branch-${group.key}`} data-role="branch"
+          x1={branchLeftX} y1={effectiveMidY}
+          x2={branchRightX} y2={effectiveMidY}
+          stroke={color} strokeWidth={1.5} opacity={0.75} />
+      );
 
       for (const child of sortedChildren) {
         lines.push(
