@@ -52,13 +52,40 @@ function reducer(state: FamilyTreeState, action: Action): FamilyTreeState {
       return { ...state, degreeFilter: action.degree };
     case "ADD_PERSON":
       return { ...state, persons: [...state.persons, action.person] };
-    case "UPDATE_PERSON":
-      return {
-        ...state,
-        persons: state.persons.map((p) =>
-          p.id === action.person.id ? action.person : p
-        ),
-      };
+    case "UPDATE_PERSON": {
+      const updated = action.person;
+      const prev = state.persons.find((p) => p.id === updated.id);
+      const prevSpouse = prev?.spouse ?? "";
+      const newSpouse = updated.spouse;
+
+      let persons = state.persons.map((p) => (p.id === updated.id ? updated : p));
+
+      if (prevSpouse !== newSpouse) {
+        // Old partner no longer points back at us
+        if (prevSpouse) {
+          persons = persons.map((p) =>
+            p.id === prevSpouse && p.spouse === updated.id ? { ...p, spouse: "" } : p
+          );
+        }
+        if (newSpouse) {
+          // If the new spouse was already paired with someone else, break that link
+          const newSpouseBefore = state.persons.find((p) => p.id === newSpouse);
+          const newSpousePrevPartner = newSpouseBefore?.spouse ?? "";
+          if (newSpousePrevPartner && newSpousePrevPartner !== updated.id) {
+            persons = persons.map((p) =>
+              p.id === newSpousePrevPartner && p.spouse === newSpouse
+                ? { ...p, spouse: "" }
+                : p
+            );
+          }
+          persons = persons.map((p) =>
+            p.id === newSpouse ? { ...p, spouse: updated.id } : p
+          );
+        }
+      }
+
+      return { ...state, persons };
+    }
     case "DELETE_PERSON": {
       const cleanedPersons = state.persons
         .filter((p) => p.id !== action.id)

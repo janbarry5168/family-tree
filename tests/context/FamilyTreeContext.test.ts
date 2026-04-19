@@ -91,3 +91,76 @@ describe("FamilyTree reducer — selection vs focus", () => {
     expect(a.siblings).toEqual(["c"]);
   });
 });
+
+describe("FamilyTree reducer — UPDATE_PERSON spouse reciprocity", () => {
+  it("setting A.spouse = B also sets B.spouse = A", () => {
+    const persons = [makePerson({ id: "a" }), makePerson({ id: "b" })];
+    const start = stateWith({ persons });
+    const next = reducer(start, {
+      type: "UPDATE_PERSON",
+      person: makePerson({ id: "a", spouse: "b" }),
+    });
+    expect(next.persons.find((p) => p.id === "b")?.spouse).toBe("a");
+  });
+
+  it("clearing A.spouse also clears the old partner's spouse field", () => {
+    const persons = [
+      makePerson({ id: "a", spouse: "b" }),
+      makePerson({ id: "b", spouse: "a" }),
+    ];
+    const start = stateWith({ persons });
+    const next = reducer(start, {
+      type: "UPDATE_PERSON",
+      person: makePerson({ id: "a", spouse: "" }),
+    });
+    expect(next.persons.find((p) => p.id === "a")?.spouse).toBe("");
+    expect(next.persons.find((p) => p.id === "b")?.spouse).toBe("");
+  });
+
+  it("changing A.spouse from B to C clears B.spouse and sets C.spouse = A", () => {
+    const persons = [
+      makePerson({ id: "a", spouse: "b" }),
+      makePerson({ id: "b", spouse: "a" }),
+      makePerson({ id: "c" }),
+    ];
+    const start = stateWith({ persons });
+    const next = reducer(start, {
+      type: "UPDATE_PERSON",
+      person: makePerson({ id: "a", spouse: "c" }),
+    });
+    expect(next.persons.find((p) => p.id === "a")?.spouse).toBe("c");
+    expect(next.persons.find((p) => p.id === "b")?.spouse).toBe("");
+    expect(next.persons.find((p) => p.id === "c")?.spouse).toBe("a");
+  });
+
+  it("stealing C (who was paired with D) breaks the old C-D link", () => {
+    const persons = [
+      makePerson({ id: "a" }),
+      makePerson({ id: "c", spouse: "d" }),
+      makePerson({ id: "d", spouse: "c" }),
+    ];
+    const start = stateWith({ persons });
+    const next = reducer(start, {
+      type: "UPDATE_PERSON",
+      person: makePerson({ id: "a", spouse: "c" }),
+    });
+    expect(next.persons.find((p) => p.id === "a")?.spouse).toBe("c");
+    expect(next.persons.find((p) => p.id === "c")?.spouse).toBe("a");
+    expect(next.persons.find((p) => p.id === "d")?.spouse).toBe("");
+  });
+
+  it("leaves other fields on A untouched when only non-spouse fields change", () => {
+    const persons = [
+      makePerson({ id: "a", spouse: "b", name: "Old" }),
+      makePerson({ id: "b", spouse: "a" }),
+    ];
+    const start = stateWith({ persons });
+    const next = reducer(start, {
+      type: "UPDATE_PERSON",
+      person: makePerson({ id: "a", spouse: "b", name: "New" }),
+    });
+    // Spouse link still in place, no reciprocal churn
+    expect(next.persons.find((p) => p.id === "a")?.name).toBe("New");
+    expect(next.persons.find((p) => p.id === "b")?.spouse).toBe("a");
+  });
+});
