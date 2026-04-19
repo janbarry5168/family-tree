@@ -16,22 +16,22 @@ const AUTO_SAVE_INTERVAL = 30_000;
 interface FamilyTreeState {
   persons: Person[];
   focusedPersonId: string;
+  selectedPersonId: string;
   degreeFilter: number;
   view: "landing" | "tree";
   warnings: string[];
-  hiddenLabels: string[];
 }
 
 type Action =
   | { type: "LOAD_DATA"; persons: Person[]; focusedId: string; warnings?: string[] }
   | { type: "SET_FOCUSED"; id: string }
+  | { type: "SET_SELECTED"; id: string }
   | { type: "SET_DEGREE"; degree: number }
   | { type: "ADD_PERSON"; person: Person }
   | { type: "UPDATE_PERSON"; person: Person }
   | { type: "DELETE_PERSON"; id: string }
   | { type: "SET_VIEW"; view: "landing" | "tree" }
-  | { type: "REPLACE_ALL"; persons: Person[] }
-  | { type: "TOGGLE_LABEL"; id: string };
+  | { type: "REPLACE_ALL"; persons: Person[] };
 
 function reducer(state: FamilyTreeState, action: Action): FamilyTreeState {
   switch (action.type) {
@@ -40,12 +40,14 @@ function reducer(state: FamilyTreeState, action: Action): FamilyTreeState {
         ...state,
         persons: action.persons,
         focusedPersonId: action.focusedId,
+        selectedPersonId: action.focusedId,
         warnings: action.warnings ?? [],
-        hiddenLabels: [],
         view: "tree",
       };
     case "SET_FOCUSED":
-      return { ...state, focusedPersonId: action.id, hiddenLabels: [] };
+      return { ...state, focusedPersonId: action.id, selectedPersonId: action.id };
+    case "SET_SELECTED":
+      return { ...state, selectedPersonId: action.id };
     case "SET_DEGREE":
       return { ...state, degreeFilter: action.degree };
     case "ADD_PERSON":
@@ -70,21 +72,19 @@ function reducer(state: FamilyTreeState, action: Action): FamilyTreeState {
         state.focusedPersonId === action.id
           ? cleanedPersons[0]?.id ?? ""
           : state.focusedPersonId;
-      return { ...state, persons: cleanedPersons, focusedPersonId: newFocused };
+      const newSelected =
+        state.selectedPersonId === action.id ? newFocused : state.selectedPersonId;
+      return {
+        ...state,
+        persons: cleanedPersons,
+        focusedPersonId: newFocused,
+        selectedPersonId: newSelected,
+      };
     }
     case "SET_VIEW":
       return { ...state, view: action.view };
     case "REPLACE_ALL":
       return { ...state, persons: action.persons };
-    case "TOGGLE_LABEL": {
-      const exists = state.hiddenLabels.includes(action.id);
-      return {
-        ...state,
-        hiddenLabels: exists
-          ? state.hiddenLabels.filter((id) => id !== action.id)
-          : [...state.hiddenLabels, action.id],
-      };
-    }
     default:
       return state;
   }
@@ -93,10 +93,10 @@ function reducer(state: FamilyTreeState, action: Action): FamilyTreeState {
 const initialState: FamilyTreeState = {
   persons: [],
   focusedPersonId: "",
+  selectedPersonId: "",
   degreeFilter: 2,
   view: "landing",
   warnings: [],
-  hiddenLabels: [],
 };
 
 const FamilyTreeContext = createContext<{
@@ -159,5 +159,5 @@ export function useSavedSession(): {
   return { hasSaved: !!saved, restore, discard };
 }
 
-export { STORAGE_KEY };
+export { STORAGE_KEY, reducer, initialState };
 export type { FamilyTreeState, Action };
