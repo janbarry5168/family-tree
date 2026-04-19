@@ -62,7 +62,7 @@ describe("ConnectionLines — sibling disambiguation", () => {
     expect(PALETTE).toContain(strokeB);
   });
 
-  it("adjacent couples' branch bars are staggered by 16px (2 * SIBLING_STAGGER)", () => {
+  it("adjacent couples' branch bars are staggered by SIBLING_STAGGER px", () => {
     const { nodes, personById } = buildScene();
     const { container } = render(
       <svg>
@@ -73,7 +73,50 @@ describe("ConnectionLines — sibling disambiguation", () => {
     expect(branches.length).toBe(2);
     const y1A = Number(branches[0].getAttribute("y1"));
     const y1B = Number(branches[1].getAttribute("y1"));
-    expect(Math.abs(y1A - y1B)).toBe(16);
+    // N=2: offsets ±0.5 * stagger → 8px apart.
+    expect(Math.abs(y1A - y1B)).toBe(8);
+  });
+
+  it("3+ couples in same generation get distinct Y levels (no overlap)", () => {
+    // Three couples in gen 0, each with one child in gen 1.
+    const persons: Person[] = [
+      makePerson({ id: "d1", spouse: "m1" }),
+      makePerson({ id: "m1", spouse: "d1" }),
+      makePerson({ id: "k1", father: "d1", mother: "m1" }),
+      makePerson({ id: "d2", spouse: "m2" }),
+      makePerson({ id: "m2", spouse: "d2" }),
+      makePerson({ id: "k2", father: "d2", mother: "m2" }),
+      makePerson({ id: "d3", spouse: "m3" }),
+      makePerson({ id: "m3", spouse: "d3" }),
+      makePerson({ id: "k3", father: "d3", mother: "m3" }),
+    ];
+    const nodes: LayoutNode[] = [
+      { id: "d1", x: -300, y: 0, generation: 0, degree: 1, nodeType: "blood" },
+      { id: "m1", x: -200, y: 0, generation: 0, degree: 0, nodeType: "spouse" },
+      { id: "d2", x:    0, y: 0, generation: 0, degree: 1, nodeType: "blood" },
+      { id: "m2", x:  100, y: 0, generation: 0, degree: 0, nodeType: "spouse" },
+      { id: "d3", x:  300, y: 0, generation: 0, degree: 1, nodeType: "blood" },
+      { id: "m3", x:  400, y: 0, generation: 0, degree: 0, nodeType: "spouse" },
+      { id: "k1", x: -250, y: 200, generation: 1, degree: 1, nodeType: "blood" },
+      { id: "k2", x:   50, y: 200, generation: 1, degree: 1, nodeType: "blood" },
+      { id: "k3", x:  350, y: 200, generation: 1, degree: 1, nodeType: "blood" },
+    ];
+    const personById = new Map(persons.map((p) => [p.id, p]));
+
+    const { container } = render(
+      <svg>
+        <ConnectionLines layoutNodes={nodes} personById={personById} />
+      </svg>
+    );
+
+    const branches = container.querySelectorAll('line[data-role="branch"]');
+    expect(branches.length).toBe(3);
+    const ys = Array.from(branches).map((b) => Number(b.getAttribute("y1")));
+    expect(new Set(ys).size).toBe(3);
+    // Offsets for N=3: -1, 0, +1 times stagger(8) → three Y values 8px apart.
+    const sorted = [...ys].sort((a, b) => a - b);
+    expect(sorted[1] - sorted[0]).toBe(8);
+    expect(sorted[2] - sorted[1]).toBe(8);
   });
 
   it("single-child couple: branch bar spans from coupleX to child.x (connector is not broken)", () => {

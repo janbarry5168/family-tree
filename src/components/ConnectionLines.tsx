@@ -86,11 +86,15 @@ export default function ConnectionLines({ layoutNodes, personById }: Props) {
 
     bucket.forEach((group, idx) => {
       const color = COUPLE_PALETTE[idx % COUPLE_PALETTE.length];
-      const staggerDir = idx % 2 === 0 ? -1 : +1;
+      // Spread couples evenly around midY so each one gets a distinct Y level —
+      // otherwise 3+ couples in the same generation land on the same branch line
+      // and overlap visually. Offsets in units of SIBLING_STAGGER, centered on 0
+      // (may be half-integer when bucket size is even).
+      const offsetFromCenter = idx - (bucket.length - 1) / 2;
 
       const parentBottomY = group.parentNodes[0].y + 36;
       const midY = (parentBottomY + group.childTopY) / 2;
-      const effectiveMidY = midY + staggerDir * SIBLING_STAGGER;
+      const effectiveMidY = midY + offsetFromCenter * SIBLING_STAGGER;
 
       // Trunk: couple midpoint down to branch level
       lines.push(
