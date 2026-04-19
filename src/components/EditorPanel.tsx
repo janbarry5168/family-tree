@@ -21,7 +21,7 @@ export default function EditorPanel({ onClose }: { onClose: () => void }) {
     const newId = String(Math.max(0, ...state.persons.map((p) => Number(p.id) || 0)) + 1);
     const person: Person = {
       id: newId, name: "", father: "", mother: "", spouse: "",
-      birthOrder: 1, birthDate: "", photo: "",
+      siblings: [], birthOrder: 1, birthDate: "", photo: "",
     };
     dispatch({ type: "ADD_PERSON", person });
     setSelectedId(newId);

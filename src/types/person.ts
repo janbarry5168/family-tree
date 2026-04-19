@@ -5,6 +5,11 @@ export interface Person {
   father: string;
   mother: string;
   spouse: string;
+  // Explicit sibling ids (bidirectional at query time). Optional on the type
+  // for easier test construction; `normalizePerson` always produces an array.
+  // Needed for older generations where parents aren't recorded but two people
+  // are known to be siblings.
+  siblings?: string[];
   birthOrder: number;
   birthDate: string;
   photo: string;

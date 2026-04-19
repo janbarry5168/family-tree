@@ -13,12 +13,26 @@ function normalizePerson(raw: Record<string, unknown>): Person {
     birthDate = raw.birthYear;
   }
 
+  // Coerce raw.siblings → string[]; drop empty strings and dedupe. Anything
+  // other than an array (missing, string, number) collapses to an empty array.
+  let siblings: string[] = [];
+  if (Array.isArray(raw.siblings)) {
+    const seen = new Set<string>();
+    for (const s of raw.siblings) {
+      const id = typeof s === "string" ? s.trim() : String(s ?? "").trim();
+      if (id === "" || seen.has(id)) continue;
+      seen.add(id);
+      siblings.push(id);
+    }
+  }
+
   const person: Person = {
     id: String(raw.id ?? ""),
     name: String(raw.name ?? ""),
     father: String(raw.father ?? ""),
     mother: String(raw.mother ?? ""),
     spouse: String(raw.spouse ?? ""),
+    siblings,
     birthOrder: Number(raw.birthOrder ?? 0),
     birthDate,
     photo: String(raw.photo ?? ""),

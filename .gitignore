@@ -16,6 +16,9 @@ coverage/
 
 .superpowers/
 
+# Personal family data — not for public repo
+public/family-tree.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

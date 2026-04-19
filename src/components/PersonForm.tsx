@@ -18,7 +18,10 @@ export default function PersonForm({ person, onClose }: Props) {
     setForm(person);
   }, [person]);
 
-  const update = (field: keyof Person, value: string | number | undefined) => {
+  const update = (
+    field: keyof Person,
+    value: string | number | string[] | undefined
+  ) => {
     if (value === undefined) {
       const { [field]: _, ...rest } = form;
       const updated = rest as Person;
@@ -30,6 +33,8 @@ export default function PersonForm({ person, onClose }: Props) {
       dispatch({ type: "UPDATE_PERSON", person: updated });
     }
   };
+
+  const currentSiblings: string[] = form.siblings ?? [];
 
   const handleDelete = () => {
     if (window.confirm(t("editor.confirmDelete"))) {
@@ -93,6 +98,40 @@ export default function PersonForm({ person, onClose }: Props) {
           </select>
         </div>
       ))}
+
+      <div>
+        <label className="block text-xs text-slate-400 mb-1">{t("editor.siblings")}</label>
+        <div className="max-h-32 overflow-y-auto border border-slate-600 rounded bg-slate-800 p-2 space-y-1">
+          {personOptions.length === 0 ? (
+            <span className="text-xs text-slate-500">{t("editor.none")}</span>
+          ) : (
+            personOptions.map((p) => {
+              const checked = currentSiblings.includes(p.id);
+              return (
+                <label
+                  key={p.id}
+                  className="flex items-center gap-2 text-xs text-slate-200 cursor-pointer hover:bg-slate-700 px-1 py-0.5 rounded"
+                >
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={(e) => {
+                      const next = e.target.checked
+                        ? [...currentSiblings, p.id]
+                        : currentSiblings.filter((s) => s !== p.id);
+                      update("siblings", next);
+                    }}
+                    className="rounded"
+                  />
+                  <span>
+                    {p.name || <span className="italic text-slate-500">Unnamed</span>}
+                  </span>
+                </label>
+              );
+            })
+          )}
+        </div>
+      </div>
 
       <div>
         <label className="block text-xs text-slate-400 mb-1">{t("editor.photo")}</label>

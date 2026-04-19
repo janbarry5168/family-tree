@@ -67,6 +67,7 @@ function reducer(state: FamilyTreeState, action: Action): FamilyTreeState {
           father: p.father === action.id ? "" : p.father,
           mother: p.mother === action.id ? "" : p.mother,
           spouse: p.spouse === action.id ? "" : p.spouse,
+          siblings: p.siblings ? p.siblings.filter((s) => s !== action.id) : p.siblings,
         }));
       const newFocused =
         state.focusedPersonId === action.id

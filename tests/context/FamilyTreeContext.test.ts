@@ -78,4 +78,16 @@ describe("FamilyTree reducer — selection vs focus", () => {
     expect(next.focusedPersonId).toBe("a");
     expect(next.selectedPersonId).toBe("b");
   });
+
+  it("DELETE_PERSON scrubs the deleted id from every person's siblings array", () => {
+    const persons: Person[] = [
+      makePerson({ id: "a", siblings: ["b", "c"] }),
+      makePerson({ id: "b", siblings: ["a"] }),
+      makePerson({ id: "c" }),
+    ];
+    const start = stateWith({ persons, focusedPersonId: "a", selectedPersonId: "a" });
+    const next = reducer(start, { type: "DELETE_PERSON", id: "b" });
+    const a = next.persons.find((p) => p.id === "a")!;
+    expect(a.siblings).toEqual(["c"]);
+  });
 });
