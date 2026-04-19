@@ -21,7 +21,7 @@ export default function ConnectionLines({ layoutNodes, personById }: Props) {
   const nodeMap = new Map(layoutNodes.map((n) => [n.id, n]));
   const lines: ReactElement[] = [];
 
-  // 1. Spouse bars (dashed gold) — only draw from smaller id to avoid duplicates
+  // 1. Spouse bars (dashed purple) — only draw from smaller id to avoid duplicates
   for (const node of layoutNodes) {
     const person = personById.get(node.id);
     if (!person) continue;
@@ -31,7 +31,7 @@ export default function ConnectionLines({ layoutNodes, personById }: Props) {
       lines.push(
         <line key={`spouse-${person.id}-${person.spouse}`}
           x1={node.x} y1={node.y} x2={spouseNode.x} y2={spouseNode.y}
-          stroke="#f59e0b" strokeWidth={1.5} strokeDasharray="6 4" opacity={0.7} />
+          stroke="#a78bfa" strokeWidth={1.5} strokeDasharray="6 4" opacity={0.7} />
       );
     }
   }

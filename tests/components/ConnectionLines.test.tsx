@@ -105,7 +105,7 @@ describe("ConnectionLines — sibling disambiguation", () => {
     expect(Math.max(x1, x2)).toBe(50);
   });
 
-  it("spouse bar is unchanged (still gold dashed)", () => {
+  it("spouse bar uses purple dashed stroke", () => {
     const { nodes, personById } = buildScene();
     const { container } = render(
       <svg>
@@ -113,7 +113,7 @@ describe("ConnectionLines — sibling disambiguation", () => {
       </svg>
     );
     const spouseLines = Array.from(container.querySelectorAll("line")).filter(
-      (l) => l.getAttribute("stroke") === "#f59e0b"
+      (l) => l.getAttribute("stroke") === "#a78bfa"
     );
     expect(spouseLines.length).toBeGreaterThan(0);
     for (const l of spouseLines) {

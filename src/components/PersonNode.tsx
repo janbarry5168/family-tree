@@ -8,9 +8,9 @@ const NODE_H = 72;
 const PHOTO_R = 18;
 
 const STYLES = {
-  focused: { border: "#a78bfa", fill: "#2e1065", borderWidth: 2.5, dashArray: "none" },
+  focused: { border: "#f59e0b", fill: "#451a03", borderWidth: 2.5, dashArray: "none" },
   blood: { border: "#3b82f6", fill: "#1e293b", borderWidth: 1.5, dashArray: "none" },
-  spouse: { border: "#f59e0b", fill: "#1e293b", borderWidth: 1.5, dashArray: "none" },
+  spouse: { border: "#a78bfa", fill: "#1e293b", borderWidth: 1.5, dashArray: "none" },
   ghost: { border: "#475569", fill: "transparent", borderWidth: 1, dashArray: "4 4" },
 };
 
@@ -71,7 +71,7 @@ export default function PersonNode({
         strokeWidth={style.borderWidth} strokeDasharray={style.dashArray} />
 
       {node.nodeType === "focused" && (
-        <rect width={NODE_W} height={NODE_H} rx={8} fill="none" stroke="#a78bfa" strokeWidth={1} opacity={0.4}>
+        <rect width={NODE_W} height={NODE_H} rx={8} fill="none" stroke="#f59e0b" strokeWidth={1} opacity={0.4}>
           <animate attributeName="opacity" values="0.4;0.1;0.4" dur="2s" repeatCount="indefinite" />
         </rect>
       )}
