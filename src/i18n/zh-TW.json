@@ -38,7 +38,12 @@
   "info": {
     "title": "成員詳細資訊",
     "birthYear": "出生年",
-    "relationship": "關係"
+    "relationship": "關係",
+    "father": "父親",
+    "mother": "母親",
+    "spouse": "配偶",
+    "children": "子女",
+    "none": "—"
   },
   "validation": {
     "invalidJson": "JSON 格式錯誤",

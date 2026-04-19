@@ -38,7 +38,12 @@
   "info": {
     "title": "Person Details",
     "birthYear": "Birth Year",
-    "relationship": "Relationship"
+    "relationship": "Relationship",
+    "father": "Father",
+    "mother": "Mother",
+    "spouse": "Spouse",
+    "children": "Children",
+    "none": "—"
   },
   "validation": {
     "invalidJson": "Invalid JSON format",
