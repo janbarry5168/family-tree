@@ -24,9 +24,7 @@ export default function InfoPanel({ selectedId }: Props) {
     (p) => p.father === person.id || p.mother === person.id
   );
 
-  const selectId = (id: string) => dispatch({ type: "SET_SELECTED", id });
-
-  const Link = ({ id }: { id: string }) => {
+  const renderLink = (id: string) => {
     const target = byId(id);
     if (!target) {
       return <span className="text-slate-500">{t("info.none")}</span>;
@@ -34,7 +32,7 @@ export default function InfoPanel({ selectedId }: Props) {
     return (
       <button
         type="button"
-        onClick={() => selectId(target.id)}
+        onClick={() => dispatch({ type: "SET_SELECTED", id: target.id })}
         className="text-sky-400 hover:text-sky-300 hover:underline text-left"
       >
         {target.name}
@@ -63,15 +61,15 @@ export default function InfoPanel({ selectedId }: Props) {
       <dl className="text-xs text-slate-300 space-y-1.5">
         <div className="flex gap-2">
           <dt className="w-14 text-slate-500">{t("info.father")}:</dt>
-          <dd className="flex-1"><Link id={person.father} /></dd>
+          <dd className="flex-1">{renderLink(person.father)}</dd>
         </div>
         <div className="flex gap-2">
           <dt className="w-14 text-slate-500">{t("info.mother")}:</dt>
-          <dd className="flex-1"><Link id={person.mother} /></dd>
+          <dd className="flex-1">{renderLink(person.mother)}</dd>
         </div>
         <div className="flex gap-2">
           <dt className="w-14 text-slate-500">{t("info.spouse")}:</dt>
-          <dd className="flex-1"><Link id={person.spouse} /></dd>
+          <dd className="flex-1">{renderLink(person.spouse)}</dd>
         </div>
         <div className="flex gap-2">
           <dt className="w-14 text-slate-500">{t("info.children")}:</dt>
@@ -81,7 +79,7 @@ export default function InfoPanel({ selectedId }: Props) {
             ) : (
               <div className="flex flex-col gap-1">
                 {children.map((c) => (
-                  <Link key={c.id} id={c.id} />
+                  <div key={c.id}>{renderLink(c.id)}</div>
                 ))}
               </div>
             )}
