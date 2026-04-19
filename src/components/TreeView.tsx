@@ -30,7 +30,7 @@ export default function TreeView() {
             </div>
           )}
         </div>
-        <InfoPanel selectedId={state.focusedPersonId} />
+        <InfoPanel selectedId={state.selectedPersonId} />
         {editorOpen && <EditorPanel onClose={() => setEditorOpen(false)} />}
       </div>
     </div>

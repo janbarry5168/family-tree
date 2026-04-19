@@ -8,7 +8,7 @@ import ConnectionLines from "./ConnectionLines";
 
 export default function TreeCanvas() {
   const { state, dispatch } = useFamilyTree();
-  const { persons, focusedPersonId, degreeFilter } = state;
+  const { persons, focusedPersonId, selectedPersonId, degreeFilter } = state;
 
   const degrees = useMemo(
     () => computeKinshipDegrees(persons, focusedPersonId),
@@ -29,27 +29,14 @@ export default function TreeCanvas() {
     return () => clearTimeout(timer);
   }, [layoutNodes, fitToView]);
 
-  const handleNodeClick = useCallback(
-    (id: string) => {
-      dispatch({ type: "SET_FOCUSED", id });
-    },
+  const handleSelect = useCallback(
+    (id: string) => dispatch({ type: "SET_SELECTED", id }),
     [dispatch]
   );
 
-  const handleToggleLabel = useCallback(
-    (id: string) => {
-      dispatch({ type: "TOGGLE_LABEL", id });
-    },
+  const handleFocus = useCallback(
+    (id: string) => dispatch({ type: "SET_FOCUSED", id }),
     [dispatch]
-  );
-
-  const isLabelHidden = useCallback(
-    (nodeId: string, degree: number): boolean => {
-      const defaultHidden = degree > 2;
-      const toggled = state.hiddenLabels.includes(nodeId);
-      return toggled ? !defaultHidden : defaultHidden;
-    },
-    [state.hiddenLabels]
   );
 
   const personById = useMemo(
@@ -78,10 +65,16 @@ export default function TreeCanvas() {
           const person = personById.get(node.id);
           if (!person) return null;
           return (
-            <PersonNode key={node.id} node={node} person={person}
-              focusedId={focusedPersonId} persons={persons} onClick={handleNodeClick}
-              isLabelHidden={isLabelHidden(node.id, node.degree)}
-              onToggleLabel={handleToggleLabel} />
+            <PersonNode
+              key={node.id}
+              node={node}
+              person={person}
+              focusedId={focusedPersonId}
+              persons={persons}
+              isSelected={node.id === selectedPersonId}
+              onSelect={handleSelect}
+              onFocus={handleFocus}
+            />
           );
         })}
       </g>
