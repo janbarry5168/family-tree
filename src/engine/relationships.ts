@@ -333,6 +333,47 @@ export function getRelationshipLabel(
       return { en: "Cousin", zhTW: `${prefix}親` };
     }
 
+    // Grandparent's sibling (great-uncle / great-aunt).
+    // Only the paternal grandfather line uses 伯公/叔公/姑婆; all other
+    // grandparent lines (paternal grandma, maternal grandpa, maternal
+    // grandma) collapse to 舅公/姨婆 in common usage.
+    if ((edges[0] === "father" || edges[0] === "mother") &&
+        (edges[1] === "father" || edges[1] === "mother") &&
+        edges[2] === "sibling") {
+      const isPaternalGrandpaLine = edges[0] === "father" && edges[1] === "father";
+
+      if (isPaternalGrandpaLine) {
+        if (targetGender === "male") {
+          const grandparentId = personIds[2];
+          const elder = isElderThan(targetId, grandparentId, persons);
+          return elder ? { en: "Great-uncle", zhTW: "伯公" } : { en: "Great-uncle", zhTW: "叔公" };
+        }
+        if (targetGender === "female") return { en: "Great-aunt", zhTW: "姑婆" };
+        return { en: "Great-uncle/aunt", zhTW: "伯叔姑婆" };
+      }
+
+      if (targetGender === "male") return { en: "Great-uncle", zhTW: "舅公" };
+      if (targetGender === "female") return { en: "Great-aunt", zhTW: "姨婆" };
+      return { en: "Great-uncle/aunt", zhTW: "舅姨婆" };
+    }
+
+    // Sibling's grandchild (great-nephew / great-niece).
+    // Brother line → 姪孫/姪孫女; sister line → 外甥孫/外甥孫女.
+    if (edges[0] === "sibling" && edges[1] === "child" && edges[2] === "child") {
+      const siblingGender = resolveGender(personIds[1], persons);
+      if (siblingGender === "male") {
+        if (targetGender === "male") return { en: "Great-nephew", zhTW: "姪孫" };
+        if (targetGender === "female") return { en: "Great-niece", zhTW: "姪孫女" };
+        return { en: "Great-nephew/niece", zhTW: "姪孫" };
+      }
+      if (siblingGender === "female") {
+        if (targetGender === "male") return { en: "Great-nephew", zhTW: "外甥孫" };
+        if (targetGender === "female") return { en: "Great-niece", zhTW: "外甥孫女" };
+        return { en: "Great-nephew/niece", zhTW: "外甥孫" };
+      }
+      return { en: "Great-nephew/niece", zhTW: "姪甥孫" };
+    }
+
     // Great-grandparents (3-hop ancestor)
     if ((edges[0] === "father" || edges[0] === "mother") &&
         (edges[1] === "father" || edges[1] === "mother") &&

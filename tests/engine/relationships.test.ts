@@ -561,6 +561,68 @@ describe("great-grandchildren", () => {
     expect(getRelationshipLabel("daughter", "dad_tang", f).zhTW).toBe("堂伯父");
   });
 
+  it("returns 姨婆 for father's mother's sister as seen by daughter", () => {
+    // daughter → me → my mom → mom's sister. 3 edges [father, mother, sibling].
+    const f: Person[] = [
+      makePerson({ id: "mggf", name: "MomGF", gender: "male", spouse: "mggm" }),
+      makePerson({ id: "mggm", name: "MomGM", gender: "female", spouse: "mggf" }),
+      makePerson({ id: "mom", name: "Mom", father: "mggf", mother: "mggm", gender: "female" }),
+      makePerson({ id: "mom_sis", name: "MomSister", father: "mggf", mother: "mggm", gender: "female" }),
+      makePerson({ id: "dad", name: "Dad", mother: "mom", gender: "male" }),
+      makePerson({ id: "daughter", name: "Daughter", father: "dad", gender: "female" }),
+    ];
+    expect(getRelationshipLabel("daughter", "mom_sis", f).zhTW).toBe("姨婆");
+  });
+
+  it("returns 外甥孫女 for sister's granddaughter as seen by focused female", () => {
+    // 姨婆 → her sister → sister's son → his daughter. [sibling, child, child].
+    const f: Person[] = [
+      makePerson({ id: "gggf", name: "GGF", gender: "male", spouse: "gggm" }),
+      makePerson({ id: "gggm", name: "GGM", gender: "female", spouse: "gggf" }),
+      makePerson({ id: "aunt", name: "Aunt", father: "gggf", mother: "gggm", gender: "female" }),
+      makePerson({ id: "mom", name: "Mom", father: "gggf", mother: "gggm", gender: "female" }),
+      makePerson({ id: "me", name: "Me", mother: "mom", gender: "male" }),
+      makePerson({ id: "daughter", name: "Daughter", father: "me", gender: "female" }),
+    ];
+    expect(getRelationshipLabel("aunt", "daughter", f).zhTW).toBe("外甥孫女");
+  });
+
+  it("returns 伯公 for paternal grandfather's elder brother as seen by grandchild", () => {
+    const f: Person[] = [
+      makePerson({ id: "pggf", name: "PGGF", gender: "male", spouse: "pggm" }),
+      makePerson({ id: "pggm", name: "PGGM", gender: "female", spouse: "pggf" }),
+      makePerson({ id: "pgf", name: "PGF", father: "pggf", mother: "pggm", birthOrder: 2, gender: "male", birthDate: "1940" }),
+      makePerson({ id: "pgu_elder", name: "PGU_Elder", father: "pggf", mother: "pggm", birthOrder: 1, gender: "male", birthDate: "1935" }),
+      makePerson({ id: "dad", name: "Dad", father: "pgf", gender: "male" }),
+      makePerson({ id: "me", name: "Me", father: "dad", gender: "male" }),
+    ];
+    expect(getRelationshipLabel("me", "pgu_elder", f).zhTW).toBe("伯公");
+  });
+
+  it("returns 姑婆 for paternal grandfather's sister as seen by grandchild", () => {
+    const f: Person[] = [
+      makePerson({ id: "pggf", name: "PGGF", gender: "male", spouse: "pggm" }),
+      makePerson({ id: "pggm", name: "PGGM", gender: "female", spouse: "pggf" }),
+      makePerson({ id: "pgf", name: "PGF", father: "pggf", mother: "pggm", gender: "male" }),
+      makePerson({ id: "pga", name: "PGA", father: "pggf", mother: "pggm", gender: "female" }),
+      makePerson({ id: "dad", name: "Dad", father: "pgf", gender: "male" }),
+      makePerson({ id: "me", name: "Me", father: "dad", gender: "male" }),
+    ];
+    expect(getRelationshipLabel("me", "pga", f).zhTW).toBe("姑婆");
+  });
+
+  it("returns 姪孫女 for brother's granddaughter as seen by focused female", () => {
+    const f: Person[] = [
+      makePerson({ id: "gggf", name: "GGF", gender: "male", spouse: "gggm" }),
+      makePerson({ id: "gggm", name: "GGM", gender: "female", spouse: "gggf" }),
+      makePerson({ id: "me", name: "Me", father: "gggf", mother: "gggm", gender: "female" }),
+      makePerson({ id: "bro", name: "Bro", father: "gggf", mother: "gggm", gender: "male" }),
+      makePerson({ id: "nephew", name: "Nephew", father: "bro", gender: "male" }),
+      makePerson({ id: "g_niece", name: "GNiece", father: "nephew", gender: "female" }),
+    ];
+    expect(getRelationshipLabel("me", "g_niece", f).zhTW).toBe("姪孫女");
+  });
+
   it("returns 表姑 for father's female 表姊/表妹 as seen by son", () => {
     // Father's paternal aunt's daughter = father's 表姊/表妹 (female) → son calls 表姑.
     // pgf and pga are siblings (share both parents pggf + pggm).
