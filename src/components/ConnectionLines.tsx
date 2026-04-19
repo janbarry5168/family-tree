@@ -63,12 +63,11 @@ export default function ConnectionLines({ layoutNodes, personById }: Props) {
         parentNodes,
         children: [],
         coupleX,
-        childTopY: 0,
+        childTopY: node.y - 36,
       });
     }
     const group = coupleMap.get(key)!;
     group.children.push(node);
-    group.childTopY = node.y - 36;
   }
 
   // 3. Within each generation (same childTopY), sort couples by coupleX and
@@ -76,9 +75,10 @@ export default function ConnectionLines({ layoutNodes, personById }: Props) {
   const byGen = new Map<number, CoupleGroup[]>();
   for (const g of coupleMap.values()) {
     if (g.children.length === 0) continue;
-    const bucket = byGen.get(g.childTopY) ?? [];
+    const genKey = g.children[0].generation;
+    const bucket = byGen.get(genKey) ?? [];
     bucket.push(g);
-    byGen.set(g.childTopY, bucket);
+    byGen.set(genKey, bucket);
   }
 
   for (const bucket of byGen.values()) {
