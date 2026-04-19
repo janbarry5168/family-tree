@@ -15,7 +15,7 @@ const makePerson = (overrides: Partial<Person> = {}): Person => ({
   mother: "",
   spouse: "",
   birthOrder: 1,
-  birthYear: 1990,
+  birthDate: "1990",
   photo: "",
   ...overrides,
 });
@@ -417,9 +417,9 @@ describe("isElderThan", () => {
     expect(isElderThan("uncle", "dad", family)).toBe(false);
   });
 
-  it("falls back to birthYear for cross-family comparison", () => {
-    const a = makePerson({ id: "a", birthYear: 1980 });
-    const b = makePerson({ id: "b", birthYear: 1990 });
+  it("falls back to birthDate year for cross-family comparison", () => {
+    const a = makePerson({ id: "a", birthDate: "1980" });
+    const b = makePerson({ id: "b", birthDate: "1990" });
     expect(isElderThan("a", "b", [a, b])).toBe(true);
     expect(isElderThan("b", "a", [a, b])).toBe(false);
   });
@@ -436,8 +436,8 @@ describe("cousins", () => {
       makePerson({ id: "gm", name: "GM", gender: "female", spouse: "gf" }),
       makePerson({ id: "dad", name: "Dad", father: "gf", mother: "gm", birthOrder: 1, gender: "male" }),
       makePerson({ id: "uncle", name: "Uncle", father: "gf", mother: "gm", birthOrder: 2, gender: "male" }),
-      makePerson({ id: "me", name: "Me", father: "dad", birthOrder: 1, birthYear: 1990 }),
-      makePerson({ id: "cousin", name: "Cousin", father: "uncle", birthOrder: 1, birthYear: 1992, gender: "male" }),
+      makePerson({ id: "me", name: "Me", father: "dad", birthOrder: 1, birthDate: "1990" }),
+      makePerson({ id: "cousin", name: "Cousin", father: "uncle", birthOrder: 1, birthDate: "1992", gender: "male" }),
     ];
     const label = getRelationshipLabel("me", "cousin", f);
     expect(label.en).toBe("Cousin");
@@ -450,8 +450,8 @@ describe("cousins", () => {
       makePerson({ id: "mgm", name: "MGM", gender: "female", spouse: "mgf" }),
       makePerson({ id: "mom", name: "Mom", father: "mgf", mother: "mgm", birthOrder: 1, gender: "female" }),
       makePerson({ id: "aunt", name: "Aunt", father: "mgf", mother: "mgm", birthOrder: 2, gender: "female" }),
-      makePerson({ id: "me", name: "Me", mother: "mom", birthOrder: 1, birthYear: 1992 }),
-      makePerson({ id: "cousin", name: "Cousin", mother: "aunt", birthOrder: 1, birthYear: 1990, gender: "female" }),
+      makePerson({ id: "me", name: "Me", mother: "mom", birthOrder: 1, birthDate: "1992" }),
+      makePerson({ id: "cousin", name: "Cousin", mother: "aunt", birthOrder: 1, birthDate: "1990", gender: "female" }),
     ];
     const label = getRelationshipLabel("me", "cousin", f);
     expect(label.en).toBe("Cousin");

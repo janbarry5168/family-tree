@@ -8,7 +8,7 @@ const validPerson = (overrides: Record<string, unknown> = {}) => ({
   mother: "",
   spouse: "",
   birthOrder: 1,
-  birthYear: 1990,
+  birthDate: "1990",
   photo: "",
   ...overrides,
 });
@@ -129,8 +129,37 @@ describe("validateFamilyData", () => {
       expect(result.persons[0].father).toBe("");
       expect(result.persons[0].mother).toBe("");
       expect(result.persons[0].spouse).toBe("");
-      expect(result.persons[0].birthYear).toBe(0);
+      expect(result.persons[0].birthDate).toBe("");
       expect(result.persons[0].photo).toBe("");
+    });
+  });
+
+  describe("legacy birthYear migration", () => {
+    it("normalizePerson migrates legacy birthYear (number) to birthDate (string)", () => {
+      const json = JSON.stringify([{ id: "1", name: "A", birthOrder: 1, birthYear: 1985 }]);
+      const result = validateFamilyData(json);
+      expect(result.valid).toBe(true);
+      expect(result.persons[0].birthDate).toBe("1985");
+    });
+
+    it("normalizePerson preserves birthDate when both birthDate and birthYear are present", () => {
+      const json = JSON.stringify([
+        { id: "1", name: "A", birthOrder: 1, birthDate: "19850315", birthYear: 1985 },
+      ]);
+      const result = validateFamilyData(json);
+      expect(result.valid).toBe(true);
+      expect(result.persons[0].birthDate).toBe("19850315");
+    });
+
+    it("normalizePerson sets empty birthDate when birthYear is 0 or missing", () => {
+      const json = JSON.stringify([
+        { id: "1", name: "A", birthOrder: 1, birthYear: 0 },
+        { id: "2", name: "B", birthOrder: 1 },
+      ]);
+      const result = validateFamilyData(json);
+      expect(result.valid).toBe(true);
+      expect(result.persons[0].birthDate).toBe("");
+      expect(result.persons[1].birthDate).toBe("");
     });
   });
 });

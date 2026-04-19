@@ -6,7 +6,7 @@ export interface Person {
   mother: string;
   spouse: string;
   birthOrder: number;
-  birthYear: number;
+  birthDate: string;
   photo: string;
 }
 

@@ -1,4 +1,5 @@
 import type { Person, Gender } from "../types/person";
+import { birthYearOf } from "./birthDate";
 
 export function getChildren(personId: string, persons: Person[]): Person[] {
   return persons
@@ -372,7 +373,7 @@ export function getRelationshipLabel(
 
 // Determines if person `aId` is elder than person `bId`.
 // Same-parent siblings: compared by birthOrder (lower = elder).
-// Cross-family: falls back to birthYear (lower = elder).
+// Cross-family: falls back to the year portion of birthDate (earlier year = elder).
 export function isElderThan(aId: string, bId: string, persons: Person[]): boolean {
   const a = persons.find((p) => p.id === aId);
   const b = persons.find((p) => p.id === bId);
@@ -383,7 +384,9 @@ export function isElderThan(aId: string, bId: string, persons: Person[]): boolea
     a.mother && b.mother && a.mother === b.mother;
   if (sameParent) return a.birthOrder < b.birthOrder;
 
-  if (a.birthYear && b.birthYear) return a.birthYear < b.birthYear;
+  const aYear = birthYearOf(a.birthDate);
+  const bYear = birthYearOf(b.birthDate);
+  if (aYear && bYear) return aYear < bYear;
 
   return false;
 }

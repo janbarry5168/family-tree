@@ -3,6 +3,16 @@ import type { Person, ValidationResult } from "../types/person";
 const REQUIRED_FIELDS: (keyof Person)[] = ["id", "name", "birthOrder"];
 
 function normalizePerson(raw: Record<string, unknown>): Person {
+  let birthDate = "";
+  if (typeof raw.birthDate === "string") {
+    birthDate = raw.birthDate;
+  } else if (typeof raw.birthYear === "number" && raw.birthYear > 0) {
+    birthDate = String(raw.birthYear);
+  } else if (typeof raw.birthYear === "string" && raw.birthYear !== "") {
+    // tolerate stringified legacy year
+    birthDate = raw.birthYear;
+  }
+
   const person: Person = {
     id: String(raw.id ?? ""),
     name: String(raw.name ?? ""),
@@ -10,7 +20,7 @@ function normalizePerson(raw: Record<string, unknown>): Person {
     mother: String(raw.mother ?? ""),
     spouse: String(raw.spouse ?? ""),
     birthOrder: Number(raw.birthOrder ?? 0),
-    birthYear: Number(raw.birthYear ?? 0),
+    birthDate,
     photo: String(raw.photo ?? ""),
   };
   if (raw.gender === "male" || raw.gender === "female") {
