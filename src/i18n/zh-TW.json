@@ -23,7 +23,7 @@
     "deletePerson": "刪除",
     "confirmDelete": "確定要刪除這位成員嗎？相關引用將會一併清除。",
     "name": "姓名",
-    "birthYear": "出生年",
+    "birthDate": "出生日期",
     "birthOrder": "排行",
     "father": "父親",
     "mother": "母親",
@@ -37,7 +37,7 @@
   },
   "info": {
     "title": "成員詳細資訊",
-    "birthYear": "出生年",
+    "birthDate": "出生日期",
     "relationship": "關係",
     "father": "父親",
     "mother": "母親",

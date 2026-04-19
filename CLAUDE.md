@@ -51,9 +51,9 @@ Single `useReducer` store for the whole app. Actions: `LOAD_DATA | SET_FOCUSED |
 
 ### Data model (`src/types/person.ts`)
 ```ts
-Person { id, name, gender?, father, mother, spouse, birthOrder, birthYear, photo }
+Person { id, name, gender?, father, mother, spouse, birthOrder, birthDate, photo }
 ```
-All parent/spouse fields are **id strings, empty string if unset** (never `null` / `undefined`). `gender` is optional and `"male" | "female"`; code that needs a gender should go through `resolveGender` in `relationships.ts`, which chains: explicit field → structural inference (is referenced as someone's father/mother) → spouse symmetry. Leaf persons with no children, no explicit gender, and no gendered spouse resolve to `"unknown"` — consumers must handle that case with gender-neutral labels.
+All parent/spouse fields are **id strings, empty string if unset** (never `null` / `undefined`). `birthDate` is a string with a partial-date format: `""` (unknown), `YYYY` (year only), `YYYYMM` (year + month), or `YYYYMMDD` (full date). Helpers live in `src/engine/birthDate.ts` — `isValidBirthDate`, `birthYearOf` (extracts year as number), `formatBirthDate` (inserts dashes for display). Legacy data using `birthYear` (number) is auto-migrated by `validation.normalizePerson` when `birthDate` is absent — callers do not need to pre-process old JSON files. `gender` is optional and `"male" | "female"`; code that needs a gender should go through `resolveGender` in `relationships.ts`, which chains: explicit field → structural inference (is referenced as someone's father/mother) → spouse symmetry. Leaf persons with no children, no explicit gender, and no gendered spouse resolve to `"unknown"` — consumers must handle that case with gender-neutral labels.
 
 ## Conventions
 

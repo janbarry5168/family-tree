@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useFamilyTree } from "../context/FamilyTreeContext";
+import { isValidBirthDate } from "../engine/birthDate";
 import type { Person } from "../types/person";
 
 interface Props {
@@ -49,9 +50,19 @@ export default function PersonForm({ person, onClose }: Props) {
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs text-slate-400 mb-1">{t("editor.birthYear")}</label>
-          <input type="number" value={form.birthYear || ""} onChange={(e) => update("birthYear", Number(e.target.value) || 0)}
-            className="w-full px-2 py-1.5 text-sm rounded bg-slate-800 border border-slate-600 text-slate-200 focus:border-purple-500 focus:outline-none" />
+          <label className="block text-xs text-slate-400 mb-1">{t("editor.birthDate")}</label>
+          <input
+            type="text"
+            inputMode="numeric"
+            value={form.birthDate}
+            onChange={(e) => update("birthDate", e.target.value)}
+            placeholder="YYYYMMDD"
+            className={`w-full px-2 py-1.5 text-sm rounded bg-slate-800 border text-slate-200 focus:outline-none ${
+              isValidBirthDate(form.birthDate)
+                ? "border-slate-600 focus:border-purple-500"
+                : "border-red-500 focus:border-red-400"
+            }`}
+          />
         </div>
         <div>
           <label className="block text-xs text-slate-400 mb-1">{t("editor.birthOrder")}</label>

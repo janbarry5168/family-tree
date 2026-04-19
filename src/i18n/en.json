@@ -23,7 +23,7 @@
     "deletePerson": "Delete",
     "confirmDelete": "Delete this person? References will be cleaned up.",
     "name": "Name",
-    "birthYear": "Birth Year",
+    "birthDate": "Birth Date",
     "birthOrder": "Birth Order",
     "father": "Father",
     "mother": "Mother",
@@ -37,7 +37,7 @@
   },
   "info": {
     "title": "Person Details",
-    "birthYear": "Birth Year",
+    "birthDate": "Birth Date",
     "relationship": "Relationship",
     "father": "Father",
     "mother": "Mother",

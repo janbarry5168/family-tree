@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { useFamilyTree } from "../context/FamilyTreeContext";
 import { getRelationshipLabel } from "../engine/relationships";
+import { formatBirthDate } from "../engine/birthDate";
 import type { Person } from "../types/person";
 
 interface Props {
@@ -52,13 +53,15 @@ export default function InfoPanel({ selectedId }: Props) {
       <p className="text-lg font-bold text-white mb-1">{person.name}</p>
       <p className="text-sm text-purple-400 mb-3">{displayLabel}</p>
 
-      {person.birthYear > 0 && (
-        <p className="text-xs text-slate-400 mb-3">
-          {t("info.birthYear")}: {person.birthYear}
-        </p>
-      )}
-
       <dl className="text-xs text-slate-300 space-y-1.5">
+        <div className="flex gap-2">
+          <dt className="w-14 text-slate-500">{t("info.birthDate")}:</dt>
+          <dd className="flex-1">
+            {person.birthDate
+              ? formatBirthDate(person.birthDate)
+              : <span className="text-slate-500">{t("info.none")}</span>}
+          </dd>
+        </div>
         <div className="flex gap-2">
           <dt className="w-14 text-slate-500">{t("info.father")}:</dt>
           <dd className="flex-1">{renderLink(person.father)}</dd>

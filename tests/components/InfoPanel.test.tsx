@@ -36,7 +36,7 @@ const makePerson = (overrides: Partial<Person> = {}): Person => ({
   mother: "",
   spouse: "",
   birthOrder: 1,
-  birthYear: 1990,
+  birthDate: "1990",
   photo: "",
   ...overrides,
 });

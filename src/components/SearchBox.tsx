@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useFamilyTree } from "../context/FamilyTreeContext";
+import { birthYearOf } from "../engine/birthDate";
 
 export default function SearchBox() {
   const { t } = useTranslation();
@@ -47,7 +48,7 @@ export default function SearchBox() {
             <li key={p.id} onClick={() => selectPerson(p.id)}
               className="px-3 py-2 text-xs text-slate-200 hover:bg-slate-700 cursor-pointer">
               {p.name}
-              {p.birthYear > 0 && <span className="ml-2 text-slate-500">({p.birthYear})</span>}
+              {p.birthDate && <span className="ml-2 text-slate-500">({birthYearOf(p.birthDate)})</span>}
             </li>
           ))}
         </ul>

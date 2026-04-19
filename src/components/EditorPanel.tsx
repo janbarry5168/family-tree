@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useFamilyTree } from "../context/FamilyTreeContext";
 import PersonForm from "./PersonForm";
+import { birthYearOf } from "../engine/birthDate";
 import type { Person } from "../types/person";
 
 export default function EditorPanel({ onClose }: { onClose: () => void }) {
@@ -20,7 +21,7 @@ export default function EditorPanel({ onClose }: { onClose: () => void }) {
     const newId = String(Math.max(0, ...state.persons.map((p) => Number(p.id) || 0)) + 1);
     const person: Person = {
       id: newId, name: "", father: "", mother: "", spouse: "",
-      birthOrder: 1, birthYear: 0, photo: "",
+      birthOrder: 1, birthDate: "", photo: "",
     };
     dispatch({ type: "ADD_PERSON", person });
     setSelectedId(newId);
@@ -49,7 +50,7 @@ export default function EditorPanel({ onClose }: { onClose: () => void }) {
                   : "text-slate-300 hover:bg-slate-700"
               }`}>
               {p.name || <span className="text-slate-500 italic">Unnamed</span>}
-              {p.birthYear > 0 && <span className="ml-2 text-slate-500">({p.birthYear})</span>}
+              {p.birthDate && <span className="ml-2 text-slate-500">({birthYearOf(p.birthDate)})</span>}
             </button>
           ))}
         </div>
