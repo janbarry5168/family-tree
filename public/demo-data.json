@@ -1,7 +1,7 @@
 [
   { "id": "1", "name": "王大明", "gender": "male", "father": "", "mother": "", "spouse": "2", "birthOrder": 1, "birthDate": "19300615", "photo": "" },
   { "id": "2", "name": "林美玉", "gender": "female", "father": "", "mother": "", "spouse": "1", "birthOrder": 1, "birthDate": "1932", "photo": "" },
-  { "id": "3", "name": "王建國", "gender": "male", "father": "1", "mother": "2", "spouse": "4", "birthOrder": 1, "birthDate": "195508", "photo": "" },
+  { "id": "3", "name": "王建國", "gender": "male", "father": "1", "mother": "2", "spouse": "4", "birthOrder": 1, "birthDate": "19550811", "photo": "" },
   { "id": "4", "name": "陳淑芬", "gender": "female", "father": "9", "mother": "10", "spouse": "3", "birthOrder": 1, "birthDate": "19570324", "photo": "" },
   { "id": "5", "name": "王美華", "gender": "female", "father": "1", "mother": "2", "spouse": "", "birthOrder": 2, "birthDate": "1958", "photo": "" },
   { "id": "6", "name": "王志明", "gender": "male", "father": "3", "mother": "4", "spouse": "7", "birthOrder": 1, "birthDate": "19800520", "photo": "" },

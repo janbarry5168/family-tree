@@ -56,7 +56,7 @@ export default function PersonForm({ person, onClose }: Props) {
             inputMode="numeric"
             value={form.birthDate}
             onChange={(e) => update("birthDate", e.target.value)}
-            placeholder="YYYYMMDD"
+            placeholder="YYYYMMDD or YYYY"
             className={`w-full px-2 py-1.5 text-sm rounded bg-slate-800 border text-slate-200 focus:outline-none ${
               isValidBirthDate(form.birthDate)
                 ? "border-slate-600 focus:border-purple-500"

@@ -5,17 +5,21 @@ describe("isValidBirthDate", () => {
   it("accepts empty string", () => {
     expect(isValidBirthDate("")).toBe(true);
   });
-  it("accepts 4/6/8 digit formats", () => {
+  it("accepts 4-digit year (ancient: month/day unknown)", () => {
     expect(isValidBirthDate("1990")).toBe(true);
-    expect(isValidBirthDate("199003")).toBe(true);
+  });
+  it("accepts 8-digit full date", () => {
     expect(isValidBirthDate("19900315")).toBe(true);
+  });
+  it("rejects 6-digit year+month (intermediate format not supported)", () => {
+    expect(isValidBirthDate("199003")).toBe(false);
   });
   it("rejects other formats", () => {
     expect(isValidBirthDate("199")).toBe(false);
     expect(isValidBirthDate("19900")).toBe(false);
     expect(isValidBirthDate("1990031")).toBe(false);
     expect(isValidBirthDate("199003150")).toBe(false);
-    expect(isValidBirthDate("1990-03-15")).toBe(false);
+    expect(isValidBirthDate("1990/03/15")).toBe(false);
     expect(isValidBirthDate("abcd")).toBe(false);
   });
 });
@@ -25,19 +29,15 @@ describe("birthYearOf", () => {
     expect(birthYearOf("")).toBe(0);
     expect(birthYearOf("123")).toBe(0);
   });
-  it("extracts year from partial and full dates", () => {
+  it("extracts year from year-only and full dates", () => {
     expect(birthYearOf("1990")).toBe(1990);
-    expect(birthYearOf("199003")).toBe(1990);
     expect(birthYearOf("19900315")).toBe(1990);
   });
 });
 
 describe("formatBirthDate", () => {
-  it("formats full date with dashes", () => {
-    expect(formatBirthDate("19900315")).toBe("1990-03-15");
-  });
-  it("formats year + month with one dash", () => {
-    expect(formatBirthDate("199003")).toBe("1990-03");
+  it("formats full date with slashes", () => {
+    expect(formatBirthDate("19900315")).toBe("1990/03/15");
   });
   it("formats year-only as-is", () => {
     expect(formatBirthDate("1990")).toBe("1990");
