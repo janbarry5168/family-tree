@@ -48,9 +48,15 @@ export default function PersonForm({ person, onClose }: Props) {
   return (
     <div className="space-y-3">
       <div>
-        <label className="block text-xs text-slate-400 mb-1">{t("editor.name")}</label>
+        <label className="block text-xs text-slate-400 mb-1">
+          {t("editor.name")} <span className="text-red-400">*</span>
+        </label>
         <input value={form.name} onChange={(e) => update("name", e.target.value)}
-          className="w-full px-2 py-1.5 text-sm rounded bg-slate-800 border border-slate-600 text-slate-200 focus:border-purple-500 focus:outline-none" />
+          className={`w-full px-2 py-1.5 text-sm rounded bg-slate-800 border text-slate-200 focus:outline-none ${
+            form.name.trim() === ""
+              ? "border-red-500 focus:border-red-400"
+              : "border-slate-600 focus:border-purple-500"
+          }`} />
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -77,9 +83,15 @@ export default function PersonForm({ person, onClose }: Props) {
       </div>
 
       <div>
-        <label className="block text-xs text-slate-400 mb-1">{t("editor.gender")}</label>
+        <label className="block text-xs text-slate-400 mb-1">
+          {t("editor.gender")} <span className="text-red-400">*</span>
+        </label>
         <select value={form.gender ?? ""} onChange={(e) => update("gender", e.target.value === "" ? undefined : e.target.value)}
-          className="w-full px-2 py-1.5 text-sm rounded bg-slate-800 border border-slate-600 text-slate-200 focus:border-purple-500 focus:outline-none">
+          className={`w-full px-2 py-1.5 text-sm rounded bg-slate-800 border text-slate-200 focus:outline-none ${
+            form.gender
+              ? "border-slate-600 focus:border-purple-500"
+              : "border-red-500 focus:border-red-400"
+          }`}>
           <option value="">{t("editor.genderUnspecified")}</option>
           <option value="male">{t("editor.genderMale")}</option>
           <option value="female">{t("editor.genderFemale")}</option>

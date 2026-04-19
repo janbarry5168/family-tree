@@ -100,6 +100,15 @@ function checkWarnings(persons: Person[]): string[] {
   const byId = new Map(persons.map((p) => [p.id, p]));
 
   for (const person of persons) {
+    // Required-in-UI fields: empty name / missing gender surface as warnings so
+    // existing files still load but the user sees which rows need filling.
+    if (!person.name || person.name.trim() === "") {
+      warnings.push(`Person "${person.id}" is missing a name`);
+    }
+    if (!person.gender) {
+      warnings.push(`"${person.name || person.id}" (${person.id}) is missing gender`);
+    }
+
     // Broken references (non-blocking: a person may be added later)
     for (const field of ["father", "mother", "spouse"] as const) {
       if (person[field] && !idSet.has(person[field])) {
