@@ -8,6 +8,121 @@ const SPOUSE_GAP = 20;
 
 const GENERATION_HEIGHT = NODE_HEIGHT + VERTICAL_GAP;
 
+type Side = "left" | "center" | "right";
+
+/**
+ * Assign each person a "side" relative to the focused person:
+ *   - center: focused, focused's spouse, and all of their shared descendants
+ *             (plus the descendants' spouses so couples stay adjacent)
+ *   - left:   focused's own relatives — parents, siblings, grandparents, uncles,
+ *             aunts, cousins, and everything reachable through them
+ *   - right:  spouse's relatives, symmetric to the left side
+ *
+ * Implementation: pre-anchor both parents of focused as "left" and both parents
+ * of spouse as "right", then BFS out from each anchor without crossing into
+ * already-assigned (center or other-side) nodes.
+ */
+function computeSides(
+  focusedId: string,
+  byId: Map<string, Person>,
+  persons: Person[],
+  childrenOf: Map<string, string[]>,
+): Map<string, Side> {
+  const sides = new Map<string, Side>();
+  const focused = byId.get(focusedId);
+  if (!focused) return sides;
+
+  const markCenter = (id: string) => {
+    if (byId.has(id) && !sides.has(id)) sides.set(id, "center");
+  };
+
+  markCenter(focusedId);
+  if (focused.spouse) markCenter(focused.spouse);
+
+  // Shared descendants of focused + spouse → center; spouses of descendants too
+  const descRoots = [focusedId];
+  if (focused.spouse && byId.has(focused.spouse)) descRoots.push(focused.spouse);
+  const descQueue = [...descRoots];
+  const descVisited = new Set<string>(descRoots);
+  while (descQueue.length) {
+    const id = descQueue.shift()!;
+    const p = byId.get(id);
+    if (p?.spouse && byId.has(p.spouse)) markCenter(p.spouse);
+    for (const childId of childrenOf.get(id) ?? []) {
+      if (descVisited.has(childId)) continue;
+      descVisited.add(childId);
+      markCenter(childId);
+      descQueue.push(childId);
+    }
+  }
+
+  // Pre-assign anchors. Two cases:
+  //   - Focused has a spouse → both of my parents go left (my side), both of
+  //     spouse's parents go right (spouse's side).
+  //   - Focused has no spouse → fall back to the classical paternal/maternal
+  //     split: father and his relatives left, mother and hers right. This
+  //     keeps the tree from squashing everything onto one side.
+  const assignSide = (id: string, side: Side) => {
+    if (!byId.has(id)) return;
+    if (!sides.has(id)) sides.set(id, side);
+  };
+  const spousePerson =
+    focused.spouse && byId.has(focused.spouse) ? byId.get(focused.spouse) : undefined;
+  const hasSpouse = !!spousePerson;
+
+  if (hasSpouse) {
+    if (focused.father) assignSide(focused.father, "left");
+    if (focused.mother) assignSide(focused.mother, "left");
+    if (spousePerson?.father) assignSide(spousePerson.father, "right");
+    if (spousePerson?.mother) assignSide(spousePerson.mother, "right");
+  } else {
+    if (focused.father) assignSide(focused.father, "left");
+    if (focused.mother) assignSide(focused.mother, "right");
+  }
+
+  const propagate = (rootId: string, side: Side) => {
+    if (!byId.has(rootId)) return;
+    const queue = [rootId];
+    const visited = new Set<string>([rootId]);
+    while (queue.length) {
+      const id = queue.shift()!;
+      if (sides.get(id) !== side) continue; // don't flow through center or the other side
+      const p = byId.get(id);
+      if (!p) continue;
+      const neighbors = [
+        p.spouse,
+        p.father,
+        p.mother,
+        ...(childrenOf.get(id) ?? []),
+      ];
+      for (const nid of neighbors) {
+        if (!nid || visited.has(nid) || !byId.has(nid)) continue;
+        visited.add(nid);
+        if (!sides.has(nid)) sides.set(nid, side);
+        queue.push(nid);
+      }
+    }
+  };
+
+  if (hasSpouse) {
+    if (focused.father) propagate(focused.father, "left");
+    if (focused.mother) propagate(focused.mother, "left");
+    if (spousePerson?.father) propagate(spousePerson.father, "right");
+    if (spousePerson?.mother) propagate(spousePerson.mother, "right");
+  } else {
+    if (focused.father) propagate(focused.father, "left");
+    if (focused.mother) propagate(focused.mother, "right");
+  }
+
+  // Everyone still unassigned falls back to center (rare — e.g. a descendant's
+  // in-laws whose only connection into the tree is through a spouse-of-descendant).
+  for (const p of persons) {
+    if (byId.has(p.id) && !sides.has(p.id)) sides.set(p.id, "center");
+  }
+
+  return sides;
+}
+
 /**
  * Computes a 2-D layout for the visible family tree around a focused person.
  *
@@ -208,41 +323,101 @@ export function computeLayout(
     generationOrder.set(gen, orderedUnits.flat());
   }
 
-  // Step 4: Assign x positions
-  // Each person gets a slot. Spouse pairs have SPOUSE_GAP between them, HORIZONTAL_GAP elsewhere.
-  // After assigning positions, shift the whole layout so focusedId lands at x=0.
+  // Step 4: Assign x positions. Each generation is split into three blocks by
+  // the side tagging from computeSides(): left (paternal line), center (focused,
+  // spouse, siblings, descendants), right (maternal line). Within a block we lay
+  // out left-to-right just like before — spouse pairs with SPOUSE_GAP, others
+  // with HORIZONTAL_GAP. The three blocks are then positioned so the center
+  // block is anchored at x=0 (with focused itself at x=0 on its own generation).
 
+  const sides = computeSides(focusedId, byId, included, childrenOf);
+
+  // Lay a group of ids out starting at cursor=0 and return { xs, lastCenter }
+  // where xs maps id → relative center x, and lastCenter is the rightmost x.
+  const layGroup = (ids: string[]) => {
+    const xs = new Map<string, number>();
+    let cursor = 0;
+    for (let i = 0; i < ids.length; i++) {
+      const id = ids[i];
+      xs.set(id, cursor);
+      const nextId = ids[i + 1];
+      if (nextId !== undefined) {
+        const person = byId.get(id);
+        const isSpousePair = person?.spouse === nextId;
+        cursor += isSpousePair ? NODE_WIDTH + SPOUSE_GAP : NODE_WIDTH + HORIZONTAL_GAP;
+      }
+    }
+    return { xs, lastCenter: cursor };
+  };
+
+  const SLOT_STEP = NODE_WIDTH + HORIZONTAL_GAP;
   const xMap = new Map<string, number>();
 
   for (const gen of sortedGenerations) {
     const order = generationOrder.get(gen)!;
     if (order.length === 0) continue;
 
-    // Lay out left to right with SLOT_WIDTH per person, except spouse pairs use SPOUSE_GAP
-    // We need to know which pairs are spouses for gap calculation.
-    // Re-derive spouse adjacency from the ordered list.
-
-    // Compute cumulative x offsets
-    let cursor = 0;
-    for (let i = 0; i < order.length; i++) {
-      const id = order[i];
-      xMap.set(id, cursor);
-
-      // Determine gap to next person
-      const nextId = order[i + 1];
-      if (nextId !== undefined) {
-        const person = byId.get(id);
-        const isSpousePair = person?.spouse === nextId;
-        const gap = isSpousePair ? NODE_WIDTH + SPOUSE_GAP : NODE_WIDTH + HORIZONTAL_GAP;
-        cursor += gap;
-      }
+    const leftIds: string[] = [];
+    const centerIds: string[] = [];
+    const rightIds: string[] = [];
+    for (const id of order) {
+      const side = sides.get(id) ?? "center";
+      if (side === "left") leftIds.push(id);
+      else if (side === "right") rightIds.push(id);
+      else centerIds.push(id);
     }
-  }
 
-  // Shift so focusedId is at x=0
-  const focusedX = xMap.get(focusedId) ?? 0;
-  for (const [id, x] of xMap) {
-    xMap.set(id, x - focusedX);
+    // Order each side block by kinship degree so direct kin sit closer to the
+    // center column. Spouses share their partner's degree (spouse edge costs 0
+    // in kinship BFS), so a stable sort keeps spouse pairs adjacent.
+    //   left  → DESC (further kin leftmost, direct parents/siblings rightmost)
+    //   right → ASC  (closer kin leftmost, further kin rightmost)
+    const sortBySide = (ids: string[], side: "left" | "right"): string[] => {
+      const indexed = ids.map((id, i) => ({
+        id,
+        i,
+        deg: degrees.get(id) ?? Number.MAX_SAFE_INTEGER,
+      }));
+      indexed.sort((a, b) =>
+        side === "left" ? b.deg - a.deg || a.i - b.i : a.deg - b.deg || a.i - b.i
+      );
+      return indexed.map((x) => x.id);
+    };
+
+    const leftSorted = sortBySide(leftIds, "left");
+    const rightSorted = sortBySide(rightIds, "right");
+
+    const centerGroup = layGroup(centerIds);
+    const leftGroup = layGroup(leftSorted);
+    const rightGroup = layGroup(rightSorted);
+
+    // Determine how to anchor the center block
+    let centerOffset = 0;
+    if (centerIds.includes(focusedId)) {
+      centerOffset = -(centerGroup.xs.get(focusedId) ?? 0);
+    } else if (centerIds.length > 0) {
+      centerOffset = -centerGroup.lastCenter / 2;
+    }
+
+    for (const [id, x] of centerGroup.xs) xMap.set(id, x + centerOffset);
+
+    const hasCenter = centerIds.length > 0;
+    const centerLeftX = hasCenter ? centerOffset : 0;
+    const centerRightX = hasCenter ? centerGroup.lastCenter + centerOffset : 0;
+
+    // Right block: first slot to the right of the center block (or of x=0 if
+    // the center is empty, leaving a half-slot gap on each side).
+    if (rightIds.length > 0) {
+      const rightStart = hasCenter ? centerRightX + SLOT_STEP : SLOT_STEP / 2;
+      for (const [id, x] of rightGroup.xs) xMap.set(id, x + rightStart);
+    }
+
+    // Left block: rightmost slot sits to the left of the center block.
+    if (leftIds.length > 0) {
+      const leftEnd = hasCenter ? centerLeftX - SLOT_STEP : -SLOT_STEP / 2;
+      const leftOffset = leftEnd - leftGroup.lastCenter;
+      for (const [id, x] of leftGroup.xs) xMap.set(id, x + leftOffset);
+    }
   }
 
   // Step 5: Assign nodeType and build LayoutNode[]
