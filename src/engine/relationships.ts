@@ -70,9 +70,13 @@ function resolveGender(personId: string, persons: Person[]): Gender {
   const structural = inferGender(personId, persons);
   if (structural !== "unknown") return structural;
 
-  // Spouse-symmetry
+  // Spouse-symmetry: use the spouse's explicit gender first, then structural
+  // inference. We can't call resolveGender on the spouse — it would recurse
+  // back through spouse-symmetry and loop.
   if (person.spouse) {
-    const spouseGender = inferGender(person.spouse, persons);
+    const spousePerson = persons.find((p) => p.id === person.spouse);
+    const spouseGender: Gender =
+      spousePerson?.gender ?? inferGender(person.spouse, persons);
     if (spouseGender === "male") return "female";
     if (spouseGender === "female") return "male";
   }

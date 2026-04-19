@@ -1096,6 +1096,23 @@ describe("getRelationshipLabel — full Chinese kinship coverage matrix", () => 
       ];
       expect(getRelationshipLabel("me", "yz", f).zhTW).toBe("姨丈");
     });
+
+    it("resolves a maternal aunt as 阿姨 when only her husband's gender is explicit", () => {
+      // The aunt has no explicit gender, is no one's father/mother (so structural
+      // inference can't help), but her spouse is explicit male. Spouse-symmetry
+      // should read the explicit field to classify her as female → 阿姨.
+      const f: Person[] = [
+        makePerson({ id: "mgf", gender: "male" }),
+        makePerson({ id: "mgm", gender: "female", spouse: "mgf" }),
+        makePerson({ id: "mom", father: "mgf", mother: "mgm", gender: "female" }),
+        makePerson({ id: "aunt", father: "mgf", mother: "mgm", spouse: "aunt_husband" }),
+        makePerson({ id: "aunt_husband", spouse: "aunt", gender: "male" }),
+        makePerson({ id: "me", mother: "mom" }),
+      ];
+      expect(getRelationshipLabel("me", "aunt", f).zhTW).toBe("阿姨");
+      // And the husband then resolves to 姨丈 (since aunt is now female).
+      expect(getRelationshipLabel("me", "aunt_husband", f).zhTW).toBe("姨丈");
+    });
   });
 
   // ---- Grandparent's generation: great-uncles, great-aunts, and their spouses ----
