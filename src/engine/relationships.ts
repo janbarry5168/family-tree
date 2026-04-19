@@ -367,13 +367,53 @@ export function getRelationshipLabel(
     }
   }
 
+  // Four-edge relationships (path length 4)
+  if (edges.length === 4) {
+    // Parent's cousin (parent → grandparent → grandparent's sibling → their child):
+    // e.g. daughter viewing her father's 表弟 → 表叔.
+    if ((edges[0] === "father" || edges[0] === "mother") &&
+        (edges[1] === "father" || edges[1] === "mother") &&
+        edges[2] === "sibling" &&
+        edges[3] === "child") {
+      const grandparentSiblingGender = resolveGender(personIds[3], persons);
+      // 堂 prefix only when tracing through the paternal-male line at both hops
+      // (child → father → father's father → his brother → his child). All other
+      // routes — including mother's side — use 表. Matches common Mandarin usage.
+      const isTang =
+        edges[0] === "father" &&
+        edges[1] === "father" &&
+        grandparentSiblingGender === "male";
+      const prefix = isTang ? "堂" : "表";
+
+      const parentId = personIds[1];
+      const elder = isElderThan(targetId, parentId, persons);
+
+      if (edges[0] === "father") {
+        // Paternal side — 伯 (elder) / 叔 (younger) / 姑 generation
+        if (targetGender === "male") {
+          return elder
+            ? { en: "Uncle", zhTW: `${prefix}伯父` }
+            : { en: "Uncle", zhTW: `${prefix}叔父` };
+        }
+        if (targetGender === "female") return { en: "Aunt", zhTW: `${prefix}姑` };
+        return { en: "Uncle/Aunt", zhTW: `${prefix}伯叔姑` };
+      } else {
+        // Maternal side — 舅 / 姨 generation
+        if (targetGender === "male") return { en: "Uncle", zhTW: `${prefix}舅` };
+        if (targetGender === "female") return { en: "Aunt", zhTW: `${prefix}姨` };
+        return { en: "Uncle/Aunt", zhTW: `${prefix}舅姨` };
+      }
+    }
+  }
+
   // Fallback
   return { en: "Relative", zhTW: "親戚" };
 }
 
 // Determines if person `aId` is elder than person `bId`.
 // Same-parent siblings: compared by birthOrder (lower = elder).
-// Cross-family: falls back to the year portion of birthDate (earlier year = elder).
+// Cross-family: compares birthDate — year first, then full YYYYMMDD if same year
+// and both persons have a full 8-digit birthDate recorded.
 export function isElderThan(aId: string, bId: string, persons: Person[]): boolean {
   const a = persons.find((p) => p.id === aId);
   const b = persons.find((p) => p.id === bId);
@@ -386,7 +426,13 @@ export function isElderThan(aId: string, bId: string, persons: Person[]): boolea
 
   const aYear = birthYearOf(a.birthDate);
   const bYear = birthYearOf(b.birthDate);
-  if (aYear && bYear) return aYear < bYear;
+  if (aYear && bYear) {
+    if (aYear !== bYear) return aYear < bYear;
+    // Same year — need full YYYYMMDD on both to break the tie.
+    if (a.birthDate.length === 8 && b.birthDate.length === 8) {
+      return a.birthDate < b.birthDate;
+    }
+  }
 
   return false;
 }
