@@ -117,6 +117,31 @@ function findRelationshipPath(
   return null;
 }
 
+// Collapse a leading `[parent, spouse, ...]` pair into `[other_parent, ...]`.
+// In a heteronormative model the spouse of a parent IS the other parent, so
+// when BFS routes through the parent-we-have to reach a relative on the other
+// parent's side (because the direct parent reference is missing on the
+// focused person), the path looks like `[father, spouse, ...]` instead of the
+// equivalent `[mother, ...]`. Normalizing here lets every downstream handler
+// operate on the canonical short path.
+function normalizeSpouseBridge(
+  edges: EdgeType[],
+  personIds: string[]
+): { edges: EdgeType[]; personIds: string[] } {
+  if (
+    edges.length >= 2 &&
+    (edges[0] === "father" || edges[0] === "mother") &&
+    edges[1] === "spouse"
+  ) {
+    const otherParent: EdgeType = edges[0] === "father" ? "mother" : "father";
+    return {
+      edges: [otherParent, ...edges.slice(2)],
+      personIds: [personIds[0], personIds[2], ...personIds.slice(3)],
+    };
+  }
+  return { edges, personIds };
+}
+
 export function getRelationshipLabel(
   focusedId: string,
   targetId: string,
@@ -124,10 +149,10 @@ export function getRelationshipLabel(
 ): RelationshipLabel {
   if (focusedId === targetId) return { en: "Self", zhTW: "自己" };
 
-  const path = findRelationshipPath(focusedId, targetId, persons);
-  if (!path) return { en: "Relative", zhTW: "親戚" };
+  const rawPath = findRelationshipPath(focusedId, targetId, persons);
+  if (!rawPath) return { en: "Relative", zhTW: "親戚" };
 
-  const { edges, personIds } = path;
+  const { edges, personIds } = normalizeSpouseBridge(rawPath.edges, rawPath.personIds);
   const targetGender = resolveGender(targetId, persons);
   const focusedPerson = persons.find((p) => p.id === focusedId)!;
   const targetPerson = persons.find((p) => p.id === targetId)!;

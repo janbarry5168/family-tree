@@ -1624,3 +1624,82 @@ describe("getRelationshipLabel — full Chinese kinship coverage matrix", () => 
     });
   });
 });
+
+describe("getRelationshipLabel — spouse-bridge (missing direct parent ref)", () => {
+  // Scenarios where the focused person only has ONE biological parent set on
+  // their record. BFS routes to maternal relatives through dad → wife, or to
+  // paternal relatives through mom → husband. The normalizer collapses those
+  // leading `[parent, spouse, ...]` hops so every downstream handler sees the
+  // canonical short path.
+
+  it("daughter → father's wife's sister (mother-missing) → 阿姨", () => {
+    // daughter has father set but mother field is empty — BFS uses [father, spouse, sibling].
+    const f: Person[] = [
+      makePerson({ id: "mgf", gender: "male", spouse: "mgm" }),
+      makePerson({ id: "mgm", gender: "female", spouse: "mgf" }),
+      makePerson({ id: "mom", father: "mgf", mother: "mgm", gender: "female", spouse: "dad" }),
+      makePerson({ id: "aunt", father: "mgf", mother: "mgm", gender: "female" }),
+      makePerson({ id: "dad", spouse: "mom", gender: "male" }),
+      makePerson({ id: "daughter", father: "dad", gender: "female" }), // mother intentionally empty
+    ];
+    expect(getRelationshipLabel("daughter", "aunt", f).zhTW).toBe("阿姨");
+  });
+
+  it("daughter → father's wife's mother's sister (user's case) → 姨婆", () => {
+    // daughter's `mother` field is empty → path is [father, spouse, mother, sibling]
+    // which normalizes to [mother, mother, sibling] → 姨婆.
+    const f: Person[] = [
+      makePerson({ id: "mggf", gender: "male", spouse: "mggm" }),
+      makePerson({ id: "mggm", gender: "female", spouse: "mggf" }),
+      makePerson({ id: "mgm", father: "mggf", mother: "mggm", gender: "female", spouse: "mgf" }),
+      makePerson({ id: "mgaunt", father: "mggf", mother: "mggm", gender: "female" }),
+      makePerson({ id: "mgf", gender: "male", spouse: "mgm" }),
+      makePerson({ id: "mom", father: "mgf", mother: "mgm", gender: "female", spouse: "dad" }),
+      makePerson({ id: "dad", spouse: "mom", gender: "male" }),
+      makePerson({ id: "daughter", father: "dad", gender: "female" }),
+    ];
+    expect(getRelationshipLabel("daughter", "mgaunt", f).zhTW).toBe("姨婆");
+  });
+
+  it("daughter → father's wife's father's brother → 舅公 (via spouse-bridge)", () => {
+    const f: Person[] = [
+      makePerson({ id: "mggf", gender: "male", spouse: "mggm" }),
+      makePerson({ id: "mggm", gender: "female", spouse: "mggf" }),
+      makePerson({ id: "mgf", father: "mggf", mother: "mggm", gender: "male", spouse: "mgm" }),
+      makePerson({ id: "mgf_bro", father: "mggf", mother: "mggm", gender: "male" }),
+      makePerson({ id: "mgm", gender: "female", spouse: "mgf" }),
+      makePerson({ id: "mom", father: "mgf", mother: "mgm", gender: "female", spouse: "dad" }),
+      makePerson({ id: "dad", spouse: "mom", gender: "male" }),
+      makePerson({ id: "daughter", father: "dad", gender: "female" }),
+    ];
+    expect(getRelationshipLabel("daughter", "mgf_bro", f).zhTW).toBe("舅公");
+  });
+
+  it("son → mother's husband's father's brother → 伯公 (elder, paternal grandpa line via spouse-bridge)", () => {
+    const f: Person[] = [
+      makePerson({ id: "pggf", gender: "male", spouse: "pggm" }),
+      makePerson({ id: "pggm", gender: "female", spouse: "pggf" }),
+      makePerson({ id: "pgf", father: "pggf", mother: "pggm", birthOrder: 2, gender: "male", birthDate: "1940", spouse: "pgm" }),
+      makePerson({ id: "pgf_bro", father: "pggf", mother: "pggm", birthOrder: 1, gender: "male", birthDate: "1935" }),
+      makePerson({ id: "pgm", gender: "female", spouse: "pgf" }),
+      makePerson({ id: "dad", father: "pgf", mother: "pgm", gender: "male", spouse: "mom" }),
+      makePerson({ id: "mom", gender: "female", spouse: "dad" }),
+      makePerson({ id: "son", mother: "mom", gender: "male" }), // father intentionally empty
+    ];
+    expect(getRelationshipLabel("son", "pgf_bro", f).zhTW).toBe("伯公");
+  });
+
+  it("daughter → father's wife's sibling's child → cousin (via spouse-bridge) — 表兄/表弟/表姊/表妹", () => {
+    const f: Person[] = [
+      makePerson({ id: "mgf", gender: "male", spouse: "mgm" }),
+      makePerson({ id: "mgm", gender: "female", spouse: "mgf" }),
+      makePerson({ id: "mom", father: "mgf", mother: "mgm", gender: "female", spouse: "dad" }),
+      makePerson({ id: "mom_bro", father: "mgf", mother: "mgm", gender: "male" }),
+      makePerson({ id: "dad", spouse: "mom", gender: "male" }),
+      makePerson({ id: "daughter", father: "dad", gender: "female", birthDate: "2010" }),
+      makePerson({ id: "cousin", father: "mom_bro", gender: "male", birthDate: "2015" }),
+    ];
+    // path is [father, spouse, sibling, child] → normalized to [mother, sibling, child] → 表弟 (cousin younger)
+    expect(getRelationshipLabel("daughter", "cousin", f).zhTW).toBe("表弟");
+  });
+});
