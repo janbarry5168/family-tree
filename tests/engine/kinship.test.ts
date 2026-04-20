@@ -14,6 +14,10 @@ const makePerson = (overrides: Partial<Person> = {}): Person => ({
   ...overrides,
 });
 
+// Degrees follow Taiwan civil-law 親等 counting: every ascending/descending
+// step costs 1, spouse edges cost 0 (affinity mirrors the partner's blood
+// degree), and siblings/collateral kin are counted via their common ancestor
+// (so full and half siblings are both degree 2).
 describe("computeKinshipDegrees", () => {
   it("returns degree 0 for the focused person", () => {
     const persons = [makePerson({ id: "me" })];
@@ -48,7 +52,7 @@ describe("computeKinshipDegrees", () => {
     expect(degrees.get("kid")).toBe(1);
   });
 
-  it("returns degree 1 for sibling", () => {
+  it("returns degree 2 for a full sibling (me → parent → sibling)", () => {
     const persons = [
       makePerson({ id: "me", father: "dad", mother: "mom", birthOrder: 1 }),
       makePerson({ id: "bro", name: "Bro", father: "dad", mother: "mom", birthOrder: 2 }),
@@ -56,7 +60,38 @@ describe("computeKinshipDegrees", () => {
       makePerson({ id: "mom", name: "Mom" }),
     ];
     const degrees = computeKinshipDegrees(persons, "me");
-    expect(degrees.get("bro")).toBe(1);
+    expect(degrees.get("bro")).toBe(2);
+  });
+
+  it("returns degree 2 for a half sibling (shared single parent)", () => {
+    const persons = [
+      makePerson({ id: "me", father: "dad", mother: "mom1" }),
+      makePerson({ id: "half", name: "Half", father: "dad", mother: "mom2" }),
+      makePerson({ id: "dad", name: "Dad" }),
+      makePerson({ id: "mom1", name: "Mom1" }),
+      makePerson({ id: "mom2", name: "Mom2" }),
+    ];
+    const degrees = computeKinshipDegrees(persons, "me");
+    expect(degrees.get("half")).toBe(2);
+  });
+
+  it("returns degree 2 for older-generation siblings with only father recorded", () => {
+    const persons = [
+      makePerson({ id: "me", father: "dad" }),
+      makePerson({ id: "bro", name: "Bro", father: "dad" }),
+      makePerson({ id: "dad", name: "Dad" }),
+    ];
+    const degrees = computeKinshipDegrees(persons, "me");
+    expect(degrees.get("bro")).toBe(2);
+  });
+
+  it("returns degree 2 for explicit-only siblings (no shared parent in tree)", () => {
+    const persons = [
+      makePerson({ id: "me", siblings: ["bro"] }),
+      makePerson({ id: "bro", name: "Bro", siblings: ["me"] }),
+    ];
+    const degrees = computeKinshipDegrees(persons, "me");
+    expect(degrees.get("bro")).toBe(2);
   });
 
   it("spouse's parent is degree 1 (spouse=0, then parent=1)", () => {
@@ -69,6 +104,18 @@ describe("computeKinshipDegrees", () => {
     expect(degrees.get("fil")).toBe(1);
   });
 
+  it("spouse's sibling is degree 2 (spouse=0, then sibling via parent=2)", () => {
+    const persons = [
+      makePerson({ id: "me", spouse: "wife" }),
+      makePerson({ id: "wife", name: "Wife", spouse: "me", father: "fil", mother: "mil" }),
+      makePerson({ id: "sil", name: "SIL", father: "fil", mother: "mil" }),
+      makePerson({ id: "fil", name: "FIL" }),
+      makePerson({ id: "mil", name: "MIL" }),
+    ];
+    const degrees = computeKinshipDegrees(persons, "me");
+    expect(degrees.get("sil")).toBe(2);
+  });
+
   it("returns degree 2 for grandparent", () => {
     const persons = [
       makePerson({ id: "me", father: "dad" }),
@@ -77,6 +124,43 @@ describe("computeKinshipDegrees", () => {
     ];
     const degrees = computeKinshipDegrees(persons, "me");
     expect(degrees.get("gf")).toBe(2);
+  });
+
+  it("returns degree 3 for an uncle (parent's sibling via grandparent)", () => {
+    const persons = [
+      makePerson({ id: "me", father: "dad" }),
+      makePerson({ id: "dad", name: "Dad", father: "gf", mother: "gm" }),
+      makePerson({ id: "uncle", name: "Uncle", father: "gf", mother: "gm" }),
+      makePerson({ id: "gf", name: "GF" }),
+      makePerson({ id: "gm", name: "GM" }),
+    ];
+    const degrees = computeKinshipDegrees(persons, "me");
+    expect(degrees.get("uncle")).toBe(3);
+  });
+
+  it("returns degree 3 for a niece (sibling's child via shared parent)", () => {
+    const persons = [
+      makePerson({ id: "me", father: "dad", mother: "mom" }),
+      makePerson({ id: "bro", name: "Bro", father: "dad", mother: "mom" }),
+      makePerson({ id: "niece", name: "Niece", father: "bro" }),
+      makePerson({ id: "dad", name: "Dad" }),
+      makePerson({ id: "mom", name: "Mom" }),
+    ];
+    const degrees = computeKinshipDegrees(persons, "me");
+    expect(degrees.get("niece")).toBe(3);
+  });
+
+  it("returns degree 4 for a first cousin", () => {
+    const persons = [
+      makePerson({ id: "me", father: "dad" }),
+      makePerson({ id: "dad", name: "Dad", father: "gf", mother: "gm" }),
+      makePerson({ id: "uncle", name: "Uncle", father: "gf", mother: "gm" }),
+      makePerson({ id: "cuz", name: "Cuz", father: "uncle" }),
+      makePerson({ id: "gf", name: "GF" }),
+      makePerson({ id: "gm", name: "GM" }),
+    ];
+    const degrees = computeKinshipDegrees(persons, "me");
+    expect(degrees.get("cuz")).toBe(4);
   });
 
   it("handles disconnected persons (not reachable)", () => {
@@ -88,7 +172,7 @@ describe("computeKinshipDegrees", () => {
     expect(degrees.has("stranger")).toBe(false);
   });
 
-  it("finds shortest path (sibling=1, not parent+child=2)", () => {
+  it("routes siblings through the common parent (parent=1, sibling=2)", () => {
     const persons = [
       makePerson({ id: "me", father: "dad", mother: "mom", birthOrder: 1 }),
       makePerson({ id: "sis", name: "Sis", father: "dad", mother: "mom", birthOrder: 2 }),
@@ -96,6 +180,7 @@ describe("computeKinshipDegrees", () => {
       makePerson({ id: "mom", name: "Mom" }),
     ];
     const degrees = computeKinshipDegrees(persons, "me");
-    expect(degrees.get("sis")).toBe(1);
+    expect(degrees.get("dad")).toBe(1);
+    expect(degrees.get("sis")).toBe(2);
   });
 });
