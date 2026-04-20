@@ -69,3 +69,85 @@ export function computeHiddenIds(
   }
   return hidden;
 }
+
+/**
+ * Find articulation points in the reachable subgraph from focusedId.
+ * An articulation point is a node whose removal would disconnect at least
+ * one other node from focusedId. focusedId itself is never returned.
+ *
+ * Walls: persons in hiddenToggles are treated as leaves — the DFS visits
+ * them but does not traverse through them. As a consequence, a toggled-off
+ * person is typically NOT returned (their subtree is already walled off).
+ * The UI handles the "keep the button on a collapsed anchor" case by
+ * unioning this set with hiddenToggles.
+ *
+ * Implementation: iterative Tarjan on the undirected graph induced by
+ * spouse/parent/child/siblings edges. O(V + E).
+ */
+export function computeArticulationPoints(
+  persons: Person[],
+  focusedId: string,
+  hiddenToggles: ReadonlySet<string>,
+): Set<string> {
+  const byId = new Map(persons.map((p) => [p.id, p]));
+  if (!byId.has(focusedId)) return new Set();
+
+  const childrenIndex = buildChildrenIndex(persons);
+
+  const edgesOf = (id: string): string[] => {
+    if (hiddenToggles.has(id) && id !== focusedId) return [];
+    const p = byId.get(id);
+    if (!p) return [];
+    return Array.from(new Set(neighborsOf(p, childrenIndex, byId)));
+  };
+
+  const disc = new Map<string, number>();
+  const low = new Map<string, number>();
+  const parent = new Map<string, string | null>();
+  const articulation = new Set<string>();
+  let timer = 0;
+
+  type Frame = { id: string; iter: Iterator<string> };
+  const stack: Frame[] = [];
+  const rootChildren = new Map<string, number>();
+
+  const visit = (id: string, par: string | null) => {
+    disc.set(id, timer);
+    low.set(id, timer);
+    timer += 1;
+    parent.set(id, par);
+    stack.push({ id, iter: edgesOf(id)[Symbol.iterator]() });
+    if (par === null) rootChildren.set(id, 0);
+  };
+
+  visit(focusedId, null);
+
+  while (stack.length > 0) {
+    const frame = stack[stack.length - 1];
+    const next = frame.iter.next();
+
+    if (next.done) {
+      stack.pop();
+      const par = parent.get(frame.id);
+      if (par !== null && par !== undefined) {
+        low.set(par, Math.min(low.get(par)!, low.get(frame.id)!));
+        if (par !== focusedId && low.get(frame.id)! >= disc.get(par)!) {
+          articulation.add(par);
+        }
+      }
+      continue;
+    }
+
+    const nbr = next.value;
+    if (!disc.has(nbr)) {
+      if (frame.id === focusedId) {
+        rootChildren.set(focusedId, (rootChildren.get(focusedId) ?? 0) + 1);
+      }
+      visit(nbr, frame.id);
+    } else if (nbr !== parent.get(frame.id)) {
+      low.set(frame.id, Math.min(low.get(frame.id)!, disc.get(nbr)!));
+    }
+  }
+
+  return articulation;
+}
