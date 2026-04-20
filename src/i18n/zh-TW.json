@@ -58,6 +58,8 @@
     "discard": "捨棄"
   },
   "tree": {
-    "disconnectedNotice": "{{count}} 位成員未連接至家族樹"
+    "disconnectedNotice": "{{count}} 位成員未連接至家族樹",
+    "hideBranch": "隱藏此人分支",
+    "showBranch": "顯示此人分支"
   }
 }

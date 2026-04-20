@@ -40,7 +40,7 @@ export default function PersonNode({
   onFocus,
   onToggleHidden,
 }: Props) {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [hovered, setHovered] = useState(false);
   const style = STYLES[node.nodeType];
 
@@ -109,13 +109,22 @@ export default function PersonNode({
       {canHide && (
         <g
           data-role="hide-toggle"
+          role="button"
+          tabIndex={0}
           transform={`translate(${NODE_W - HIDE_BTN_SIZE - HIDE_BTN_PAD}, ${HIDE_BTN_PAD})`}
           onClick={(e) => {
             e.stopPropagation();
             onToggleHidden(person.id);
           }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              onToggleHidden(person.id);
+            }
+          }}
           style={{ cursor: "pointer" }}
         >
+          <title>{isHidden ? t("tree.showBranch") : t("tree.hideBranch")}</title>
           <circle
             cx={HIDE_BTN_SIZE / 2}
             cy={HIDE_BTN_SIZE / 2}

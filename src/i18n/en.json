@@ -58,6 +58,8 @@
     "discard": "Discard"
   },
   "tree": {
-    "disconnectedNotice": "{{count}} person(s) not connected to the tree"
+    "disconnectedNotice": "{{count}} person(s) not connected to the tree",
+    "hideBranch": "Hide this person's branch",
+    "showBranch": "Show this person's branch"
   }
 }
