@@ -33,7 +33,7 @@ type Action =
   | { type: "DELETE_PERSON"; id: string }
   | { type: "SET_VIEW"; view: "landing" | "tree" }
   | { type: "REPLACE_ALL"; persons: Person[] }
-  | { type: "TOGGLE_PERSON_HIDDEN"; payload: { personId: string } };
+  | { type: "TOGGLE_PERSON_HIDDEN"; id: string };
 
 function reducer(state: FamilyTreeState, action: Action): FamilyTreeState {
   switch (action.type) {
@@ -118,13 +118,12 @@ function reducer(state: FamilyTreeState, action: Action): FamilyTreeState {
     case "REPLACE_ALL":
       return { ...state, persons: action.persons };
     case "TOGGLE_PERSON_HIDDEN": {
-      const { personId } = action.payload;
-      const has = state.hiddenPersonIds.includes(personId);
+      const has = state.hiddenPersonIds.includes(action.id);
       return {
         ...state,
         hiddenPersonIds: has
-          ? state.hiddenPersonIds.filter((id) => id !== personId)
-          : [...state.hiddenPersonIds, personId],
+          ? state.hiddenPersonIds.filter((id) => id !== action.id)
+          : [...state.hiddenPersonIds, action.id],
       };
     }
     default:

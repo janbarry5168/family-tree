@@ -168,13 +168,13 @@ describe("FamilyTree reducer — UPDATE_PERSON spouse reciprocity", () => {
 describe("FamilyTree reducer — hiddenPersonIds", () => {
   it("TOGGLE_PERSON_HIDDEN adds id when not present", () => {
     const start = stateWith({ hiddenPersonIds: [] });
-    const next = reducer(start, { type: "TOGGLE_PERSON_HIDDEN", payload: { personId: "wife" } });
+    const next = reducer(start, { type: "TOGGLE_PERSON_HIDDEN", id: "wife" });
     expect(next.hiddenPersonIds).toEqual(["wife"]);
   });
 
   it("TOGGLE_PERSON_HIDDEN removes id when already present", () => {
     const start = stateWith({ hiddenPersonIds: ["wife", "sib"] });
-    const next = reducer(start, { type: "TOGGLE_PERSON_HIDDEN", payload: { personId: "wife" } });
+    const next = reducer(start, { type: "TOGGLE_PERSON_HIDDEN", id: "wife" });
     expect(next.hiddenPersonIds).toEqual(["sib"]);
   });
 
