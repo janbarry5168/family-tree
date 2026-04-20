@@ -8,7 +8,8 @@ Live demo: https://janbarry5168.github.io/family-tree/
 
 - Focused-person-centric layout — click any node to re-center the tree around them
 - Bilingual kinship labels (English + Traditional Chinese) resolved from structural relationships, gender inference, and birth order
-- Degree filter to expand or collapse the visible tree; one extra "ghost" ring shows the boundary
+- Degree filter to expand or collapse the visible tree
+- Per-person hide-branch toggle that collapses everyone reachable only through that person (in-laws, distant relatives) so you can focus on the part of the tree you care about
 - Load your own data via JSON upload, or try the bundled demo
 - Auto-save to `localStorage` every 30 seconds; landing page offers to restore on return
 - Pan / zoom / fit-to-view (powered by d3-zoom)
