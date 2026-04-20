@@ -22,7 +22,7 @@ export interface ValidationResult {
   persons: Person[];
 }
 
-export type NodeType = "focused" | "blood" | "spouse" | "ghost";
+export type NodeType = "focused" | "blood" | "spouse";
 
 export interface LayoutNode {
   id: string;

@@ -130,7 +130,8 @@ function computeSides(
  * Computes a 2-D layout for the visible family tree around a focused person.
  *
  * Algorithm:
- *  1. Filter to persons with degree <= maxDegree (visible) + degree === maxDegree+1 (ghost boundary).
+ *  0. Drop hidden persons (hiddenIds) before any other processing.
+ *  1. Filter to persons with degree <= maxDegree (visible).
  *  2. BFS-assign a generation number to every visible person:
  *       - spouse  → same generation
  *       - parent  → generation - 1
@@ -145,22 +146,23 @@ export function computeLayout(
   persons: Person[],
   focusedId: string,
   degrees: Map<string, number>,
-  maxDegree: number
+  maxDegree: number,
+  hiddenIds: ReadonlySet<string>,
 ): LayoutNode[] {
-  // Step 1: partition persons into visible and ghost sets
+  // Step 0: drop hidden persons entirely — they must not appear in the layout.
+  persons = persons.filter((p) => !hiddenIds.has(p.id));
+
+  // Step 1: partition persons into the visible set
   const visibleIds = new Set<string>();
-  const ghostIds = new Set<string>();
 
   for (const [id, deg] of degrees) {
     if (deg <= maxDegree) {
       visibleIds.add(id);
-    } else if (deg === maxDegree + 1) {
-      ghostIds.add(id);
     }
-    // degree > maxDegree + 1 → excluded entirely
+    // degree > maxDegree → excluded entirely
   }
 
-  const includedIds = new Set([...visibleIds, ...ghostIds]);
+  const includedIds = visibleIds;
   const included = persons.filter((p) => includedIds.has(p.id));
   const byId = new Map(included.map((p) => [p.id, p]));
 
@@ -169,8 +171,7 @@ export function computeLayout(
   const genMap = new Map<string, number>();
   genMap.set(focusedId, 0);
 
-  // Use a queue; process visible nodes only for generation assignment
-  // (ghosts inherit their generation from their visible parent/child)
+  // Use a queue; process visible nodes for generation assignment.
   const queue: string[] = [focusedId];
 
   // Pre-compute children index
@@ -214,8 +215,7 @@ export function computeLayout(
     }
   }
 
-  // Assign default generation for any included person not yet reached via BFS
-  // (e.g. ghosts whose parent was not in the BFS queue)
+  // Assign default generation for any included person not yet reached via BFS.
   for (const p of included) {
     if (!genMap.has(p.id)) {
       // Infer from their visible relative
@@ -438,8 +438,6 @@ export function computeLayout(
     let nodeType: NodeType;
     if (p.id === focusedId) {
       nodeType = "focused";
-    } else if (ghostIds.has(p.id)) {
-      nodeType = "ghost";
     } else if (p.id === focusedSpouseId) {
       nodeType = "spouse";
     } else {

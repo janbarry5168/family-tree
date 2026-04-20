@@ -18,7 +18,7 @@ describe("computeLayout", () => {
   it("places a single focused person at origin", () => {
     const persons = [makePerson({ id: "me" })];
     const degrees = new Map([["me", 0]]);
-    const nodes = computeLayout(persons, "me", degrees, 2);
+    const nodes = computeLayout(persons, "me", degrees, 2, new Set());
 
     const me = nodes.find((n) => n.id === "me")!;
     expect(me.x).toBe(0);
@@ -33,7 +33,7 @@ describe("computeLayout", () => {
       makePerson({ id: "wife", name: "Wife", spouse: "me" }),
     ];
     const degrees = new Map([["me", 0], ["wife", 0]]);
-    const nodes = computeLayout(persons, "me", degrees, 2);
+    const nodes = computeLayout(persons, "me", degrees, 2, new Set());
 
     const me = nodes.find((n) => n.id === "me")!;
     const wife = nodes.find((n) => n.id === "wife")!;
@@ -49,7 +49,7 @@ describe("computeLayout", () => {
       makePerson({ id: "mom", name: "Mom", spouse: "dad" }),
     ];
     const degrees = new Map([["me", 0], ["dad", 1], ["mom", 1]]);
-    const nodes = computeLayout(persons, "me", degrees, 2);
+    const nodes = computeLayout(persons, "me", degrees, 2, new Set());
 
     const me = nodes.find((n) => n.id === "me")!;
     const dad = nodes.find((n) => n.id === "dad")!;
@@ -63,7 +63,7 @@ describe("computeLayout", () => {
       makePerson({ id: "kid", name: "Kid", father: "me", birthOrder: 1 }),
     ];
     const degrees = new Map([["me", 0], ["kid", 1]]);
-    const nodes = computeLayout(persons, "me", degrees, 2);
+    const nodes = computeLayout(persons, "me", degrees, 2, new Set());
 
     const me = nodes.find((n) => n.id === "me")!;
     const kid = nodes.find((n) => n.id === "kid")!;
@@ -80,7 +80,7 @@ describe("computeLayout", () => {
       makePerson({ id: "c", name: "C", father: "dad", mother: "mom", birthOrder: 3 }),
     ];
     const degrees = new Map([["dad", 1], ["mom", 1], ["a", 0], ["b", 1], ["c", 1]]);
-    const nodes = computeLayout(persons, "a", degrees, 2);
+    const nodes = computeLayout(persons, "a", degrees, 2, new Set());
 
     const a = nodes.find((n) => n.id === "a")!;
     const b = nodes.find((n) => n.id === "b")!;
@@ -93,20 +93,19 @@ describe("computeLayout", () => {
     expect(b.x).toBeLessThan(c.x);
   });
 
-  it("marks ghost nodes one degree beyond filter", () => {
+  it("excludes persons one degree beyond filter (no ghost card)", () => {
     const persons = [
       makePerson({ id: "me", father: "dad" }),
       makePerson({ id: "dad", name: "Dad", father: "gf" }),
       makePerson({ id: "gf", name: "GF" }),
     ];
     const degrees = new Map([["me", 0], ["dad", 1], ["gf", 2]]);
-    const nodes = computeLayout(persons, "me", degrees, 1);
+    const nodes = computeLayout(persons, "me", degrees, 1, new Set());
 
-    const gf = nodes.find((n) => n.id === "gf");
-    expect(gf?.nodeType).toBe("ghost");
+    expect(nodes.find((n) => n.id === "gf")).toBeUndefined();
   });
 
-  it("excludes persons beyond ghost boundary (degree > filter+1)", () => {
+  it("excludes persons beyond filter (degree > maxDegree)", () => {
     const persons = [
       makePerson({ id: "me", father: "dad" }),
       makePerson({ id: "dad", name: "Dad", father: "gf" }),
@@ -114,7 +113,7 @@ describe("computeLayout", () => {
       makePerson({ id: "ggf", name: "GGF" }),
     ];
     const degrees = new Map([["me", 0], ["dad", 1], ["gf", 2], ["ggf", 3]]);
-    const nodes = computeLayout(persons, "me", degrees, 1);
+    const nodes = computeLayout(persons, "me", degrees, 1, new Set());
 
     expect(nodes.find((n) => n.id === "ggf")).toBeUndefined();
   });
@@ -129,7 +128,7 @@ describe("computeLayout", () => {
         makePerson({ id: "wife", name: "Wife", spouse: "me" }),
       ];
       const degrees = new Map([["me", 0], ["wife", 0]]);
-      const nodes = computeLayout(persons, "me", degrees, 2);
+      const nodes = computeLayout(persons, "me", degrees, 2, new Set());
       expect(find(nodes, "me").x).toBe(0);
       expect(find(nodes, "wife").x).toBeGreaterThan(0);
     });
@@ -142,7 +141,7 @@ describe("computeLayout", () => {
         makePerson({ id: "mom", name: "Mom", spouse: "dad" }),
       ];
       const degrees = new Map([["me", 0], ["wife", 0], ["dad", 1], ["mom", 1]]);
-      const nodes = computeLayout(persons, "me", degrees, 2);
+      const nodes = computeLayout(persons, "me", degrees, 2, new Set());
       expect(find(nodes, "dad").x).toBeLessThan(0);
       expect(find(nodes, "mom").x).toBeLessThan(0);
     });
@@ -154,7 +153,7 @@ describe("computeLayout", () => {
         makePerson({ id: "mom", name: "Mom", spouse: "dad" }),
       ];
       const degrees = new Map([["me", 0], ["dad", 1], ["mom", 1]]);
-      const nodes = computeLayout(persons, "me", degrees, 2);
+      const nodes = computeLayout(persons, "me", degrees, 2, new Set());
       expect(find(nodes, "dad").x).toBeLessThan(0);
       expect(find(nodes, "mom").x).toBeGreaterThan(0);
     });
@@ -167,7 +166,7 @@ describe("computeLayout", () => {
         makePerson({ id: "wm", name: "WM", spouse: "wf" }),
       ];
       const degrees = new Map([["me", 0], ["wife", 0], ["wf", 1], ["wm", 1]]);
-      const nodes = computeLayout(persons, "me", degrees, 2);
+      const nodes = computeLayout(persons, "me", degrees, 2, new Set());
       expect(find(nodes, "wf").x).toBeGreaterThan(0);
       expect(find(nodes, "wm").x).toBeGreaterThan(0);
     });
@@ -180,7 +179,7 @@ describe("computeLayout", () => {
         makePerson({ id: "mom", name: "Mom", spouse: "dad" }),
       ];
       const degrees = new Map([["me", 0], ["sib", 1], ["dad", 1], ["mom", 1]]);
-      const nodes = computeLayout(persons, "me", degrees, 2);
+      const nodes = computeLayout(persons, "me", degrees, 2, new Set());
       expect(find(nodes, "sib").x).toBeLessThan(0);
     });
 
@@ -205,7 +204,7 @@ describe("computeLayout", () => {
         ["puncle", 2], ["muncle", 2], ["pgf", 2], ["mgf", 2],
         ["wuncle", 2], ["wpgf", 2],
       ]);
-      const nodes = computeLayout(persons, "me", degrees, 3);
+      const nodes = computeLayout(persons, "me", degrees, 3, new Set());
 
       // My side (left)
       expect(find(nodes, "dad").x).toBeLessThan(0);
@@ -227,7 +226,7 @@ describe("computeLayout", () => {
         makePerson({ id: "kid", name: "Kid", father: "me", birthOrder: 1 }),
       ];
       const degrees = new Map([["me", 0], ["kid", 1]]);
-      const nodes = computeLayout(persons, "me", degrees, 2);
+      const nodes = computeLayout(persons, "me", degrees, 2, new Set());
       expect(find(nodes, "kid").x).toBe(0);
     });
 
@@ -245,7 +244,7 @@ describe("computeLayout", () => {
       const degrees = new Map([
         ["me", 0], ["sp", 0], ["dad", 1], ["mom", 1], ["aunt", 2], ["mgf", 2], ["mgm", 2],
       ]);
-      const nodes = computeLayout(persons, "me", degrees, 3);
+      const nodes = computeLayout(persons, "me", degrees, 3, new Set());
 
       // mom (deg 1, direct parent) should sit closer to focused (larger x, nearer to 0)
       // than aunt (deg 2). Both are on the left side (negative x).
@@ -279,7 +278,7 @@ describe("computeLayout", () => {
         ["son", 1], ["dil", 1],
         ["dilf", 3], ["dilm", 3], ["dilgf", 4],
       ]);
-      const nodes = computeLayout(persons, "me", degrees, 4);
+      const nodes = computeLayout(persons, "me", degrees, 4, new Set());
 
       // At gen -1: dad/mom left, spf/spm right (both deg 1), dilgf distant in-law.
       // dilgf must be pushed past spf/spm — not sitting between my parents and
@@ -305,12 +304,63 @@ describe("computeLayout", () => {
         ["me", 0], ["wife", 0], ["wf", 1], ["wm", 1],
         ["waunt", 2], ["wmgf", 2], ["wmgm", 2],
       ]);
-      const nodes = computeLayout(persons, "me", degrees, 3);
+      const nodes = computeLayout(persons, "me", degrees, 3, new Set());
 
       // wm (deg 1) should sit closer to focused (smaller x) than waunt (deg 2).
       expect(find(nodes, "wm").x).toBeGreaterThan(0);
       expect(find(nodes, "waunt").x).toBeGreaterThan(0);
       expect(find(nodes, "wm").x).toBeLessThan(find(nodes, "waunt").x);
+    });
+  });
+
+  describe("hiddenIds parameter", () => {
+    it("excludes hidden persons from the output", () => {
+      const persons = [
+        makePerson({ id: "me", spouse: "wife" }),
+        makePerson({ id: "wife", name: "Wife", spouse: "me", father: "wdad" }),
+        makePerson({ id: "wdad", name: "WDad" }),
+      ];
+      const degrees = new Map([["me", 0], ["wife", 0], ["wdad", 1]]);
+      const nodes = computeLayout(persons, "me", degrees, 2, new Set(["wdad"]));
+      expect(nodes.find((n) => n.id === "wdad")).toBeUndefined();
+      expect(nodes.find((n) => n.id === "me")).toBeDefined();
+    });
+
+    it("output is identical (modulo ghost removal) when hiddenIds is empty", () => {
+      const persons = [
+        makePerson({ id: "me", father: "dad" }),
+        makePerson({ id: "dad", name: "Dad" }),
+      ];
+      const degrees = new Map([["me", 0], ["dad", 1]]);
+      const nodes = computeLayout(persons, "me", degrees, 2, new Set());
+      expect(nodes.find((n) => n.id === "me")?.nodeType).toBe("focused");
+      expect(nodes.find((n) => n.id === "dad")?.nodeType).toBe("blood");
+    });
+  });
+
+  describe("ghost NodeType removed", () => {
+    it("persons at degree maxDegree+1 are excluded (no ghost card)", () => {
+      const persons = [
+        makePerson({ id: "me", father: "dad" }),
+        makePerson({ id: "dad", name: "Dad", father: "gpa" }),
+        makePerson({ id: "gpa", name: "Grandpa" }),
+      ];
+      const degrees = new Map([["me", 0], ["dad", 1], ["gpa", 2]]);
+      const nodes = computeLayout(persons, "me", degrees, 1, new Set());
+      expect(nodes.find((n) => n.id === "gpa")).toBeUndefined();
+    });
+
+    it("no node in the output has nodeType 'ghost'", () => {
+      const persons = [
+        makePerson({ id: "me", father: "dad" }),
+        makePerson({ id: "dad", name: "Dad", father: "gpa" }),
+        makePerson({ id: "gpa", name: "Grandpa" }),
+      ];
+      const degrees = new Map([["me", 0], ["dad", 1], ["gpa", 2]]);
+      const nodes = computeLayout(persons, "me", degrees, 1, new Set());
+      for (const n of nodes) {
+        expect(n.nodeType).not.toBe("ghost");
+      }
     });
   });
 });
