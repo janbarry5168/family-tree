@@ -20,10 +20,11 @@ interface FamilyTreeState {
   degreeFilter: number;
   view: "landing" | "tree";
   warnings: string[];
+  hiddenPersonIds: string[];
 }
 
 type Action =
-  | { type: "LOAD_DATA"; persons: Person[]; focusedId: string; warnings?: string[] }
+  | { type: "LOAD_DATA"; persons: Person[]; focusedId: string; warnings?: string[]; hiddenPersonIds?: string[] }
   | { type: "SET_FOCUSED"; id: string }
   | { type: "SET_SELECTED"; id: string }
   | { type: "SET_DEGREE"; degree: number }
@@ -31,7 +32,8 @@ type Action =
   | { type: "UPDATE_PERSON"; person: Person }
   | { type: "DELETE_PERSON"; id: string }
   | { type: "SET_VIEW"; view: "landing" | "tree" }
-  | { type: "REPLACE_ALL"; persons: Person[] };
+  | { type: "REPLACE_ALL"; persons: Person[] }
+  | { type: "TOGGLE_PERSON_HIDDEN"; payload: { personId: string } };
 
 function reducer(state: FamilyTreeState, action: Action): FamilyTreeState {
   switch (action.type) {
@@ -43,6 +45,7 @@ function reducer(state: FamilyTreeState, action: Action): FamilyTreeState {
         selectedPersonId: action.focusedId,
         warnings: action.warnings ?? [],
         view: "tree",
+        hiddenPersonIds: action.hiddenPersonIds ?? [],
       };
     case "SET_FOCUSED":
       return { ...state, focusedPersonId: action.id, selectedPersonId: action.id };
@@ -107,12 +110,23 @@ function reducer(state: FamilyTreeState, action: Action): FamilyTreeState {
         persons: cleanedPersons,
         focusedPersonId: newFocused,
         selectedPersonId: newSelected,
+        hiddenPersonIds: state.hiddenPersonIds.filter((id) => id !== action.id),
       };
     }
     case "SET_VIEW":
       return { ...state, view: action.view };
     case "REPLACE_ALL":
       return { ...state, persons: action.persons };
+    case "TOGGLE_PERSON_HIDDEN": {
+      const { personId } = action.payload;
+      const has = state.hiddenPersonIds.includes(personId);
+      return {
+        ...state,
+        hiddenPersonIds: has
+          ? state.hiddenPersonIds.filter((id) => id !== personId)
+          : [...state.hiddenPersonIds, personId],
+      };
+    }
     default:
       return state;
   }
@@ -125,6 +139,7 @@ const initialState: FamilyTreeState = {
   degreeFilter: 2,
   view: "landing",
   warnings: [],
+  hiddenPersonIds: [],
 };
 
 const FamilyTreeContext = createContext<{

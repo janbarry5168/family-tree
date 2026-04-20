@@ -164,3 +164,51 @@ describe("FamilyTree reducer — UPDATE_PERSON spouse reciprocity", () => {
     expect(next.persons.find((p) => p.id === "b")?.spouse).toBe("a");
   });
 });
+
+describe("FamilyTree reducer — hiddenPersonIds", () => {
+  it("TOGGLE_PERSON_HIDDEN adds id when not present", () => {
+    const start = stateWith({ hiddenPersonIds: [] });
+    const next = reducer(start, { type: "TOGGLE_PERSON_HIDDEN", payload: { personId: "wife" } });
+    expect(next.hiddenPersonIds).toEqual(["wife"]);
+  });
+
+  it("TOGGLE_PERSON_HIDDEN removes id when already present", () => {
+    const start = stateWith({ hiddenPersonIds: ["wife", "sib"] });
+    const next = reducer(start, { type: "TOGGLE_PERSON_HIDDEN", payload: { personId: "wife" } });
+    expect(next.hiddenPersonIds).toEqual(["sib"]);
+  });
+
+  it("DELETE_PERSON scrubs deleted id from hiddenPersonIds", () => {
+    const persons = [
+      makePerson({ id: "me" }),
+      makePerson({ id: "wife", spouse: "me" }),
+    ];
+    const start = stateWith({
+      persons,
+      focusedPersonId: "me",
+      selectedPersonId: "me",
+      hiddenPersonIds: ["wife", "other"],
+    });
+    const next = reducer(start, { type: "DELETE_PERSON", id: "wife" });
+    expect(next.hiddenPersonIds).toEqual(["other"]);
+  });
+
+  it("LOAD_DATA without hiddenPersonIds defaults to empty array", () => {
+    const next = reducer(initialState, {
+      type: "LOAD_DATA",
+      persons: [makePerson({ id: "root" })],
+      focusedId: "root",
+    });
+    expect(next.hiddenPersonIds).toEqual([]);
+  });
+
+  it("LOAD_DATA with hiddenPersonIds preserves it", () => {
+    const next = reducer(initialState, {
+      type: "LOAD_DATA",
+      persons: [makePerson({ id: "root" })],
+      focusedId: "root",
+      hiddenPersonIds: ["a", "b"],
+    });
+    expect(next.hiddenPersonIds).toEqual(["a", "b"]);
+  });
+});
