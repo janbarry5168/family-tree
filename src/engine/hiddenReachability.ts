@@ -109,7 +109,6 @@ export function computeArticulationPoints(
 
   type Frame = { id: string; iter: Iterator<string> };
   const stack: Frame[] = [];
-  const rootChildren = new Map<string, number>();
 
   const visit = (id: string, par: string | null) => {
     disc.set(id, timer);
@@ -117,7 +116,6 @@ export function computeArticulationPoints(
     timer += 1;
     parent.set(id, par);
     stack.push({ id, iter: edgesOf(id)[Symbol.iterator]() });
-    if (par === null) rootChildren.set(id, 0);
   };
 
   visit(focusedId, null);
@@ -140,9 +138,6 @@ export function computeArticulationPoints(
 
     const nbr = next.value;
     if (!disc.has(nbr)) {
-      if (frame.id === focusedId) {
-        rootChildren.set(focusedId, (rootChildren.get(focusedId) ?? 0) + 1);
-      }
       visit(nbr, frame.id);
     } else if (nbr !== parent.get(frame.id)) {
       low.set(frame.id, Math.min(low.get(frame.id)!, disc.get(nbr)!));
