@@ -42,8 +42,11 @@ function renderNode(props: Partial<React.ComponentProps<typeof PersonNode>> = {}
         focusedId="root"
         persons={[person]}
         isSelected={false}
+        canHide={false}
+        isHidden={false}
         onSelect={() => {}}
         onFocus={() => {}}
+        onToggleHidden={() => {}}
         {...props}
       />
     </svg>

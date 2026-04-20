@@ -6,12 +6,13 @@ import type { LayoutNode, Person } from "../types/person";
 const NODE_W = 140;
 const NODE_H = 72;
 const PHOTO_R = 18;
+const HIDE_BTN_SIZE = 18;
+const HIDE_BTN_PAD = 4;
 
 const STYLES = {
   focused: { border: "#f59e0b", fill: "#451a03", borderWidth: 2.5, dashArray: "none" },
   blood: { border: "#3b82f6", fill: "#1e293b", borderWidth: 1.5, dashArray: "none" },
   spouse: { border: "#a78bfa", fill: "#1e293b", borderWidth: 1.5, dashArray: "none" },
-  ghost: { border: "#475569", fill: "transparent", borderWidth: 1, dashArray: "4 4" },
 };
 
 interface Props {
@@ -20,8 +21,11 @@ interface Props {
   focusedId: string;
   persons: Person[];
   isSelected: boolean;
+  canHide: boolean;
+  isHidden: boolean;
   onSelect: (id: string) => void;
   onFocus: (id: string) => void;
+  onToggleHidden: (id: string) => void;
 }
 
 export default function PersonNode({
@@ -30,8 +34,11 @@ export default function PersonNode({
   focusedId,
   persons,
   isSelected,
+  canHide,
+  isHidden,
   onSelect,
   onFocus,
+  onToggleHidden,
 }: Props) {
   const { i18n } = useTranslation();
   const [hovered, setHovered] = useState(false);
@@ -85,7 +92,7 @@ export default function PersonNode({
       ) : (
         <text x={PHOTO_R + 8} y={NODE_H / 2 + 5} textAnchor="middle"
           fill="#94a3b8" fontSize={14} fontWeight="bold">
-          {node.nodeType === "ghost" ? "?" : initials}
+          {initials}
         </text>
       )}
 
@@ -98,6 +105,38 @@ export default function PersonNode({
         fill={style.border} fontSize={10}>
         {displayLabel}
       </text>
+
+      {canHide && (
+        <g
+          data-role="hide-toggle"
+          transform={`translate(${NODE_W - HIDE_BTN_SIZE - HIDE_BTN_PAD}, ${HIDE_BTN_PAD})`}
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleHidden(person.id);
+          }}
+          style={{ cursor: "pointer" }}
+        >
+          <circle
+            cx={HIDE_BTN_SIZE / 2}
+            cy={HIDE_BTN_SIZE / 2}
+            r={HIDE_BTN_SIZE / 2}
+            fill="#0f172a"
+            stroke={style.border}
+            strokeWidth={1}
+          />
+          {isHidden ? (
+            <g stroke="#e2e8f0" strokeWidth={1.2} fill="none" strokeLinecap="round">
+              <path d={`M 3 ${HIDE_BTN_SIZE / 2} Q ${HIDE_BTN_SIZE / 2} 4 ${HIDE_BTN_SIZE - 3} ${HIDE_BTN_SIZE / 2} Q ${HIDE_BTN_SIZE / 2} ${HIDE_BTN_SIZE - 4} 3 ${HIDE_BTN_SIZE / 2} Z`} />
+              <line x1="3" y1={HIDE_BTN_SIZE - 3} x2={HIDE_BTN_SIZE - 3} y2="3" />
+            </g>
+          ) : (
+            <g stroke="#e2e8f0" strokeWidth={1.2} fill="none">
+              <path d={`M 3 ${HIDE_BTN_SIZE / 2} Q ${HIDE_BTN_SIZE / 2} 4 ${HIDE_BTN_SIZE - 3} ${HIDE_BTN_SIZE / 2} Q ${HIDE_BTN_SIZE / 2} ${HIDE_BTN_SIZE - 4} 3 ${HIDE_BTN_SIZE / 2} Z`} />
+              <circle cx={HIDE_BTN_SIZE / 2} cy={HIDE_BTN_SIZE / 2} r="1.6" fill="#e2e8f0" stroke="none" />
+            </g>
+          )}
+        </g>
+      )}
     </g>
   );
 }
