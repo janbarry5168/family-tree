@@ -2,22 +2,35 @@ import { useEffect, useMemo, useCallback } from "react";
 import { useFamilyTree } from "../context/FamilyTreeContext";
 import { computeKinshipDegrees } from "../engine/kinship";
 import { computeLayout } from "../engine/layout";
+import { computeHiddenIds, computeArticulationPoints } from "../engine/hiddenReachability";
 import { useD3Zoom } from "../hooks/useD3Zoom";
 import PersonNode from "./PersonNode";
 import ConnectionLines from "./ConnectionLines";
 
 export default function TreeCanvas() {
   const { state, dispatch } = useFamilyTree();
-  const { persons, focusedPersonId, selectedPersonId, degreeFilter } = state;
+  const { persons, focusedPersonId, selectedPersonId, degreeFilter, hiddenPersonIds } = state;
+
+  const hiddenToggles = useMemo(() => new Set(hiddenPersonIds), [hiddenPersonIds]);
 
   const degrees = useMemo(
     () => computeKinshipDegrees(persons, focusedPersonId),
     [persons, focusedPersonId]
   );
 
+  const hiddenIds = useMemo(
+    () => computeHiddenIds(persons, focusedPersonId, hiddenToggles),
+    [persons, focusedPersonId, hiddenToggles]
+  );
+
+  const articulationIds = useMemo(
+    () => computeArticulationPoints(persons, focusedPersonId, hiddenToggles),
+    [persons, focusedPersonId, hiddenToggles]
+  );
+
   const layoutNodes = useMemo(
-    () => computeLayout(persons, focusedPersonId, degrees, degreeFilter),
-    [persons, focusedPersonId, degrees, degreeFilter]
+    () => computeLayout(persons, focusedPersonId, degrees, degreeFilter, hiddenIds),
+    [persons, focusedPersonId, degrees, degreeFilter, hiddenIds]
   );
 
   const { svgRef, fitToView } = useD3Zoom<SVGSVGElement>();
@@ -36,6 +49,11 @@ export default function TreeCanvas() {
 
   const handleFocus = useCallback(
     (id: string) => dispatch({ type: "SET_FOCUSED", id }),
+    [dispatch]
+  );
+
+  const handleToggleHidden = useCallback(
+    (id: string) => dispatch({ type: "TOGGLE_PERSON_HIDDEN", id }),
     [dispatch]
   );
 
@@ -64,6 +82,9 @@ export default function TreeCanvas() {
         {layoutNodes.map((node) => {
           const person = personById.get(node.id);
           if (!person) return null;
+          const isHidden = hiddenToggles.has(node.id);
+          const canHide =
+            node.id !== focusedPersonId && (isHidden || articulationIds.has(node.id));
           return (
             <PersonNode
               key={node.id}
@@ -72,8 +93,11 @@ export default function TreeCanvas() {
               focusedId={focusedPersonId}
               persons={persons}
               isSelected={node.id === selectedPersonId}
+              canHide={canHide}
+              isHidden={isHidden}
               onSelect={handleSelect}
               onFocus={handleFocus}
+              onToggleHidden={handleToggleHidden}
             />
           );
         })}
