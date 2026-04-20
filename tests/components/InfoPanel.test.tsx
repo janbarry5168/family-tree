@@ -22,6 +22,7 @@ const ctx: { state: FamilyTreeState; dispatch: ReturnType<typeof vi.fn> } = {
     degreeFilter: 2,
     view: "tree",
     warnings: [],
+    hiddenPersonIds: [],
   },
   dispatch: vi.fn(),
 };
@@ -49,6 +50,7 @@ beforeEach(() => {
     degreeFilter: 2,
     view: "tree",
     warnings: [],
+    hiddenPersonIds: [],
   };
   ctx.dispatch = vi.fn();
 });
