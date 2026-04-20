@@ -143,14 +143,14 @@ function computeSides(
  *  5. y = generation * GENERATION_HEIGHT (focused person's generation is 0 → y=0).
  */
 export function computeLayout(
-  persons: Person[],
+  allPersons: Person[],
   focusedId: string,
   degrees: Map<string, number>,
   maxDegree: number,
   hiddenIds: ReadonlySet<string>,
 ): LayoutNode[] {
   // Step 0: drop hidden persons entirely — they must not appear in the layout.
-  persons = persons.filter((p) => !hiddenIds.has(p.id));
+  const persons = allPersons.filter((p) => !hiddenIds.has(p.id));
 
   // Step 1: partition persons into the visible set
   const visibleIds = new Set<string>();
