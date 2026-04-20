@@ -159,11 +159,12 @@ export function FamilyTreeProvider({ children }: { children: ReactNode }) {
           persons: state.persons,
           focusedPersonId: state.focusedPersonId,
           degreeFilter: state.degreeFilter,
+          hiddenPersonIds: state.hiddenPersonIds,
         })
       );
     }, AUTO_SAVE_INTERVAL);
     return () => clearInterval(interval);
-  }, [state.persons, state.focusedPersonId, state.degreeFilter]);
+  }, [state.persons, state.focusedPersonId, state.degreeFilter, state.hiddenPersonIds]);
 
   return (
     <FamilyTreeContext.Provider value={{ state, dispatch }}>
@@ -191,6 +192,7 @@ export function useSavedSession(): {
       type: "LOAD_DATA",
       persons: data.persons,
       focusedId: data.focusedPersonId,
+      hiddenPersonIds: Array.isArray(data.hiddenPersonIds) ? data.hiddenPersonIds : [],
     });
   }, [saved, dispatch]);
 
