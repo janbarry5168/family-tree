@@ -1845,3 +1845,137 @@ describe("getRelationshipLabel — explicit siblings field (for incomplete paren
     expect(label.en).not.toBe("Relative");
   });
 });
+
+describe("cousin's child (堂姪/堂外甥, 表姪/表外甥)", () => {
+  // Paternal uncle's daughter (堂姊) → her son → 堂外甥.
+  it("returns 堂外甥 for paternal uncle's daughter's son", () => {
+    const f: Person[] = [
+      makePerson({ id: "gf", name: "GF", gender: "male" }),
+      makePerson({ id: "gm", name: "GM", gender: "female", spouse: "gf" }),
+      makePerson({ id: "dad", name: "Dad", father: "gf", mother: "gm", birthOrder: 1, gender: "male" }),
+      makePerson({ id: "uncle", name: "Uncle", father: "gf", mother: "gm", birthOrder: 2, gender: "male" }),
+      makePerson({ id: "me", name: "Me", father: "dad", birthOrder: 1, birthDate: "1990", gender: "male" }),
+      makePerson({ id: "tangSis", name: "堂姐", father: "uncle", birthOrder: 1, birthDate: "1988", gender: "female" }),
+      makePerson({ id: "target", name: "Target", mother: "tangSis", gender: "male" }),
+    ];
+    const label = getRelationshipLabel("me", "target", f);
+    expect(label.en).toBe("First cousin once removed");
+    expect(label.zhTW).toBe("堂外甥");
+  });
+
+  it("returns 堂外甥女 for paternal uncle's daughter's daughter", () => {
+    const f: Person[] = [
+      makePerson({ id: "gf", name: "GF", gender: "male" }),
+      makePerson({ id: "gm", name: "GM", gender: "female", spouse: "gf" }),
+      makePerson({ id: "dad", name: "Dad", father: "gf", mother: "gm", birthOrder: 1, gender: "male" }),
+      makePerson({ id: "uncle", name: "Uncle", father: "gf", mother: "gm", birthOrder: 2, gender: "male" }),
+      makePerson({ id: "me", name: "Me", father: "dad", birthOrder: 1, birthDate: "1990", gender: "male" }),
+      makePerson({ id: "tangSis", name: "堂姐", father: "uncle", birthOrder: 1, birthDate: "1988", gender: "female" }),
+      makePerson({ id: "target", name: "Target", mother: "tangSis", gender: "female" }),
+    ];
+    const label = getRelationshipLabel("me", "target", f);
+    expect(label.zhTW).toBe("堂外甥女");
+  });
+
+  // Paternal uncle's son (堂兄/堂弟) → his child → 堂姪/堂姪女.
+  it("returns 堂姪 for paternal uncle's son's son", () => {
+    const f: Person[] = [
+      makePerson({ id: "gf", name: "GF", gender: "male" }),
+      makePerson({ id: "gm", name: "GM", gender: "female", spouse: "gf" }),
+      makePerson({ id: "dad", name: "Dad", father: "gf", mother: "gm", birthOrder: 1, gender: "male" }),
+      makePerson({ id: "uncle", name: "Uncle", father: "gf", mother: "gm", birthOrder: 2, gender: "male" }),
+      makePerson({ id: "me", name: "Me", father: "dad", birthOrder: 1, birthDate: "1990", gender: "male" }),
+      makePerson({ id: "tangBro", name: "堂兄", father: "uncle", birthOrder: 1, birthDate: "1988", gender: "male" }),
+      makePerson({ id: "target", name: "Target", father: "tangBro", gender: "male" }),
+    ];
+    const label = getRelationshipLabel("me", "target", f);
+    expect(label.zhTW).toBe("堂姪");
+  });
+
+  // Maternal uncle's son (表弟) → his daughter → 表姪女.
+  it("returns 表姪女 for maternal uncle's son's daughter", () => {
+    const f: Person[] = [
+      makePerson({ id: "mgf", name: "MGF", gender: "male" }),
+      makePerson({ id: "mgm", name: "MGM", gender: "female", spouse: "mgf" }),
+      makePerson({ id: "mom", name: "Mom", father: "mgf", mother: "mgm", birthOrder: 1, gender: "female" }),
+      makePerson({ id: "mUncle", name: "Uncle", father: "mgf", mother: "mgm", birthOrder: 2, gender: "male" }),
+      makePerson({ id: "me", name: "Me", mother: "mom", birthOrder: 1, birthDate: "1990", gender: "male" }),
+      makePerson({ id: "biaoBro", name: "表弟", father: "mUncle", birthOrder: 1, birthDate: "1995", gender: "male" }),
+      makePerson({ id: "target", name: "Target", father: "biaoBro", gender: "female" }),
+    ];
+    const label = getRelationshipLabel("me", "target", f);
+    expect(label.zhTW).toBe("表姪女");
+  });
+
+  // Paternal aunt's daughter (表姊/表妹) → her son → 表外甥.
+  // Paternal aunt = father's sister, so edges[0]=father but uncleAuntGender=female → 表.
+  it("returns 表外甥 for paternal aunt's daughter's son", () => {
+    const f: Person[] = [
+      makePerson({ id: "gf", name: "GF", gender: "male" }),
+      makePerson({ id: "gm", name: "GM", gender: "female", spouse: "gf" }),
+      makePerson({ id: "dad", name: "Dad", father: "gf", mother: "gm", birthOrder: 1, gender: "male" }),
+      makePerson({ id: "paternalAunt", name: "Aunt", father: "gf", mother: "gm", birthOrder: 2, gender: "female" }),
+      makePerson({ id: "me", name: "Me", father: "dad", birthOrder: 1, birthDate: "1990", gender: "male" }),
+      makePerson({ id: "biaoSis", name: "表姐", mother: "paternalAunt", birthOrder: 1, birthDate: "1988", gender: "female" }),
+      makePerson({ id: "target", name: "Target", mother: "biaoSis", gender: "male" }),
+    ];
+    const label = getRelationshipLabel("me", "target", f);
+    expect(label.zhTW).toBe("表外甥");
+  });
+});
+
+describe("far-kin default (堂/表 × 兄弟姊妹 for 2nd+ cousins)", () => {
+  // Patriline broken at tangSis (female cousin of my dad): paternal uncle male, but
+  // his daughter takes her husband's surname at marriage, so her child's surname ≠ mine.
+  // Default rule: any female in the descending chain → 表.
+  it("returns 表姊 when the female-cousin link breaks the patriline", () => {
+    const f: Person[] = [
+      makePerson({ id: "gf", name: "GF", gender: "male" }),
+      makePerson({ id: "gm", name: "GM", gender: "female", spouse: "gf" }),
+      makePerson({ id: "dad", name: "Dad", father: "gf", mother: "gm", birthOrder: 1, gender: "male" }),
+      makePerson({ id: "uncle", name: "Uncle", father: "gf", mother: "gm", birthOrder: 2, gender: "male" }),
+      makePerson({ id: "me", name: "Me", father: "dad", birthDate: "1990", gender: "male" }),
+      makePerson({ id: "tangSis", name: "堂姐", father: "uncle", birthDate: "1988", gender: "female" }),
+      makePerson({ id: "myKid", name: "MyKid", father: "me", birthDate: "2020" }),
+      makePerson({ id: "cousinKid", name: "CousinKid", mother: "tangSis", birthDate: "2015", gender: "female" }),
+    ];
+    const label = getRelationshipLabel("myKid", "cousinKid", f);
+    expect(label.en).toBe("Cousin");
+    expect(label.zhTW).toBe("表姊");
+  });
+
+  // Full patriline: dad male, uncle male, uncle's son 堂兄 male — surname preserved → 堂.
+  it("returns 堂弟 when ascending is all-father and descending chain is all-male", () => {
+    const f: Person[] = [
+      makePerson({ id: "gf", name: "GF", gender: "male" }),
+      makePerson({ id: "gm", name: "GM", gender: "female", spouse: "gf" }),
+      makePerson({ id: "dad", name: "Dad", father: "gf", mother: "gm", birthOrder: 1, gender: "male" }),
+      makePerson({ id: "uncle", name: "Uncle", father: "gf", mother: "gm", birthOrder: 2, gender: "male" }),
+      makePerson({ id: "me", name: "Me", father: "dad", birthDate: "1990", gender: "male" }),
+      makePerson({ id: "tangBro", name: "堂兄", father: "uncle", birthDate: "1988", gender: "male" }),
+      makePerson({ id: "myKid", name: "MyKid", father: "me", birthDate: "2020", gender: "male" }),
+      makePerson({ id: "cousinKid", name: "CousinKid", father: "tangBro", birthDate: "2023", gender: "male" }),
+    ];
+    const label = getRelationshipLabel("myKid", "cousinKid", f);
+    expect(label.en).toBe("Cousin");
+    expect(label.zhTW).toBe("堂弟");
+  });
+
+  // Ascending goes through "mother" — viewer's own surname already diverges from the
+  // common ancestor's line, so no matter what the descending chain looks like → 表.
+  it("returns 表兄 when ascending path goes through mother (maternal-side kin)", () => {
+    const f: Person[] = [
+      makePerson({ id: "mgf", name: "MGF", gender: "male" }),
+      makePerson({ id: "mgm", name: "MGM", gender: "female", spouse: "mgf" }),
+      makePerson({ id: "mom", name: "Mom", father: "mgf", mother: "mgm", birthOrder: 1, gender: "female" }),
+      makePerson({ id: "mUncle", name: "Uncle", father: "mgf", mother: "mgm", birthOrder: 2, gender: "male" }),
+      makePerson({ id: "me", name: "Me", mother: "mom", birthDate: "1990", gender: "female" }),
+      makePerson({ id: "biaoBro", name: "表弟", father: "mUncle", birthDate: "1995", gender: "male" }),
+      makePerson({ id: "myKid", name: "MyKid", mother: "me", birthDate: "2020", gender: "male" }),
+      makePerson({ id: "cousinKid", name: "CousinKid", father: "biaoBro", birthDate: "2018", gender: "male" }),
+    ];
+    const label = getRelationshipLabel("myKid", "cousinKid", f);
+    expect(label.en).toBe("Cousin");
+    expect(label.zhTW).toBe("表兄");
+  });
+});

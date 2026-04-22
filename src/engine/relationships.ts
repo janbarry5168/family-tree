@@ -540,6 +540,35 @@ export function getRelationshipLabel(
       }
     }
 
+    // Cousin's child (parent → sibling → child → child).
+    // Mirrors the 3-edge 姪/外甥 split by the intermediate's gender:
+    // male cousin (堂兄/堂弟/表兄/表弟) keeps the same-surname line → 姪/姪女;
+    // female cousin (堂姊/堂妹/表姊/表妹) married out → 外甥/外甥女.
+    // 堂 prefix follows the same rule as length-3 cousin: paternal uncle's line only.
+    // Source: 維基百科「堂親」— 堂兄弟之子 = 堂姪/堂姪女; 堂姐妹之子 = 外甥/外甥女 以此類推.
+    if ((edges[0] === "father" || edges[0] === "mother") &&
+        edges[1] === "sibling" &&
+        edges[2] === "child" &&
+        edges[3] === "child") {
+      const uncleAuntGender = resolveGender(personIds[2], persons);
+      const cousinGender = resolveGender(personIds[3], persons);
+      const isTang = edges[0] === "father" && uncleAuntGender === "male";
+      const prefix = isTang ? "堂" : "表";
+      const viaFemaleCousin = cousinGender === "female";
+      const suffixBase = viaFemaleCousin ? "外甥" : "姪";
+
+      if (targetGender === "male") {
+        return { en: "First cousin once removed", zhTW: `${prefix}${suffixBase}` };
+      }
+      if (targetGender === "female") {
+        return {
+          en: "First cousin once removed",
+          zhTW: `${prefix}${viaFemaleCousin ? "外甥女" : "姪女"}`,
+        };
+      }
+      return { en: "First cousin once removed", zhTW: `${prefix}${suffixBase}` };
+    }
+
     // Great-uncle / great-aunt's spouse (grandparent's sibling's spouse).
     // [parent, parent, sibling, spouse].
     // Paternal grandpa line (father,father): 伯公/叔公's wife → 伯婆/叔婆 (by age vs grandparent);
@@ -610,6 +639,43 @@ export function getRelationshipLabel(
           : { en: "Cousin-in-law", zhTW: `${prefix}妹夫` };
       }
       return { en: "Cousin-in-law", zhTW: `${prefix}姻親` };
+    }
+  }
+
+  // Default for "far-enough" same-generation kin (shared ancestor ≥ 2 generations up).
+  // Path shape: [parent × k, sibling, child × k], k ≥ 2, edges.length = 2k + 1.
+  // 教育部辭典「親屬關係簡表」only covers first cousin; second-cousin-and-beyond has
+  // no official Taiwan naming. Collapse to 堂/表 + 兄/弟/姊/妹 by the patriline rule:
+  //   同姓 → 堂 (ascending all "father" AND every intermediate in the descending chain is male)
+  //   不同姓 → 表 (otherwise — any female link or any "mother" edge breaks the surname line)
+  if (edges.length >= 5 && edges.length % 2 === 1) {
+    const k = (edges.length - 1) / 2;
+    const ascending = edges.slice(0, k);
+    const descending = edges.slice(k + 1);
+    const isFarSameGen =
+      edges[k] === "sibling" &&
+      ascending.every((e) => e === "father" || e === "mother") &&
+      descending.every((e) => e === "child");
+
+    if (isFarSameGen) {
+      const allAscendingFather = ascending.every((e) => e === "father");
+      let allLineageMale = true;
+      for (let i = k + 1; i <= 2 * k; i++) {
+        if (resolveGender(personIds[i], persons) !== "male") {
+          allLineageMale = false;
+          break;
+        }
+      }
+      const prefix = allAscendingFather && allLineageMale ? "堂" : "表";
+      const elder = isElderThan(targetId, focusedId, persons);
+
+      if (targetGender === "male") {
+        return { en: "Cousin", zhTW: elder ? `${prefix}兄` : `${prefix}弟` };
+      }
+      if (targetGender === "female") {
+        return { en: "Cousin", zhTW: elder ? `${prefix}姊` : `${prefix}妹` };
+      }
+      return { en: "Cousin", zhTW: `${prefix}兄弟姊妹` };
     }
   }
 
