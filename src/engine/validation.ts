@@ -37,6 +37,9 @@ function normalizePerson(raw: Record<string, unknown>): Person {
     birthDate,
     photo: String(raw.photo ?? ""),
   };
+  if (typeof raw.root === "boolean") {
+    person.root = raw.root;
+  }
   if (raw.gender === "male" || raw.gender === "female") {
     person.gender = raw.gender;
   }

@@ -44,7 +44,9 @@
     "mother": "Mother",
     "spouse": "Spouse",
     "children": "Children",
-    "none": "—"
+    "none": "—",
+    "open": "Show details",
+    "close": "Close"
   },
   "validation": {
     "invalidJson": "Invalid JSON format",

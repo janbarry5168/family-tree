@@ -2,6 +2,7 @@ import { useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useFamilyTree } from "../context/FamilyTreeContext";
 import { validateFamilyData } from "../engine/validation";
+import { selectInitialFocusId } from "../engine/rootPerson";
 import LanguageToggle from "./LanguageToggle";
 import SearchBox from "./SearchBox";
 
@@ -28,7 +29,12 @@ export default function Toolbar({ onEditClick }: { onEditClick: () => void }) {
       const text = reader.result as string;
       const result = validateFamilyData(text);
       if (result.valid) {
-        dispatch({ type: "LOAD_DATA", persons: result.persons, focusedId: result.persons[0]?.id ?? "", warnings: result.warnings });
+        dispatch({
+          type: "LOAD_DATA",
+          persons: result.persons,
+          focusedId: selectInitialFocusId(result.persons),
+          warnings: result.warnings,
+        });
       } else {
         alert(result.errors.join("\n"));
       }

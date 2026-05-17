@@ -131,6 +131,18 @@ describe("validateFamilyData", () => {
       expect(result.persons[0].spouse).toBe("");
       expect(result.persons[0].birthDate).toBe("");
       expect(result.persons[0].photo).toBe("");
+      expect(result.persons[0].root).toBeUndefined();
+    });
+
+    it("preserves a boolean root marker", () => {
+      const result = validateFamilyData(JSON.stringify([
+        validPerson({ id: "1", root: false }),
+        validPerson({ id: "2", root: true }),
+      ]));
+
+      expect(result.valid).toBe(true);
+      expect(result.persons[0].root).toBe(false);
+      expect(result.persons[1].root).toBe(true);
     });
   });
 

@@ -6,9 +6,10 @@ import type { Person } from "../types/person";
 
 interface Props {
   selectedId: string | null;
+  onClose?: () => void;
 }
 
-export default function InfoPanel({ selectedId }: Props) {
+export default function InfoPanel({ selectedId, onClose }: Props) {
   const { t, i18n } = useTranslation();
   const { state, dispatch } = useFamilyTree();
 
@@ -42,8 +43,20 @@ export default function InfoPanel({ selectedId }: Props) {
   };
 
   return (
-    <div className="w-64 bg-[#1e293b] border-l border-slate-700 p-4 shrink-0 overflow-y-auto">
-      <h3 className="text-sm font-semibold text-slate-300 mb-3">{t("info.title")}</h3>
+    <aside className="fixed inset-0 z-30 bg-[#1e293b] p-4 overflow-y-auto md:static md:inset-auto md:z-auto md:w-64 md:border-l md:border-slate-700 md:shrink-0">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h3 className="text-sm font-semibold text-slate-300">{t("info.title")}</h3>
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded border border-slate-600 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700"
+            aria-label={t("info.close")}
+          >
+            {t("info.close")}
+          </button>
+        )}
+      </div>
 
       {person.photo && (
         <img src={person.photo} alt={person.name}
@@ -89,6 +102,6 @@ export default function InfoPanel({ selectedId }: Props) {
           </dd>
         </div>
       </dl>
-    </div>
+    </aside>
   );
 }

@@ -13,6 +13,7 @@ export interface Person {
   birthOrder: number;
   birthDate: string;
   photo: string;
+  root?: boolean;
 }
 
 export interface ValidationResult {
