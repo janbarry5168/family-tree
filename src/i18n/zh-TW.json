@@ -44,7 +44,9 @@
     "mother": "母親",
     "spouse": "配偶",
     "children": "子女",
-    "none": "—"
+    "none": "—",
+    "open": "顯示詳細資訊",
+    "close": "關閉"
   },
   "validation": {
     "invalidJson": "JSON 格式錯誤",

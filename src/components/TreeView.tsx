@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useFamilyTree } from "../context/FamilyTreeContext";
 import TreeCanvas from "./TreeCanvas";
@@ -10,6 +10,7 @@ import { computeKinshipDegrees } from "../engine/kinship";
 export default function TreeView() {
   const { state } = useFamilyTree();
   const [editorOpen, setEditorOpen] = useState(false);
+  const [infoPanelOpen, setInfoPanelOpen] = useState(true);
   const { t } = useTranslation();
 
   const degrees = useMemo(
@@ -17,6 +18,12 @@ export default function TreeView() {
     [state.persons, state.focusedPersonId]
   );
   const disconnectedCount = state.persons.length - degrees.size;
+
+  useEffect(() => {
+    if (state.selectedPersonId) {
+      setInfoPanelOpen(true);
+    }
+  }, [state.selectedPersonId]);
 
   return (
     <div className="h-screen flex flex-col bg-[#0f172a] text-slate-200">
@@ -29,8 +36,22 @@ export default function TreeView() {
               {t("tree.disconnectedNotice", { count: disconnectedCount })}
             </div>
           )}
+          {!infoPanelOpen && state.selectedPersonId && (
+            <button
+              type="button"
+              onClick={() => setInfoPanelOpen(true)}
+              className="absolute right-4 top-4 rounded border border-slate-600 bg-slate-800/90 px-3 py-2 text-xs text-slate-200 shadow-lg hover:bg-slate-700"
+            >
+              {t("info.open")}
+            </button>
+          )}
         </div>
-        <InfoPanel selectedId={state.selectedPersonId} />
+        {infoPanelOpen && (
+          <InfoPanel
+            selectedId={state.selectedPersonId}
+            onClose={() => setInfoPanelOpen(false)}
+          />
+        )}
         {editorOpen && <EditorPanel onClose={() => setEditorOpen(false)} />}
       </div>
     </div>

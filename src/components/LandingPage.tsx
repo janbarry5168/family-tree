@@ -2,6 +2,7 @@ import { useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useFamilyTree, useSavedSession } from "../context/FamilyTreeContext";
 import { validateFamilyData } from "../engine/validation";
+import { selectInitialFocusId } from "../engine/rootPerson";
 import LanguageToggle from "./LanguageToggle";
 
 export default function LandingPage() {
@@ -18,7 +19,7 @@ export default function LandingPage() {
       dispatch({
         type: "LOAD_DATA",
         persons: result.persons,
-        focusedId: result.persons[5]?.id ?? result.persons[0]?.id ?? "",
+        focusedId: selectInitialFocusId(result.persons),
         warnings: result.warnings,
       });
     }
@@ -35,7 +36,7 @@ export default function LandingPage() {
         dispatch({
           type: "LOAD_DATA",
           persons: result.persons,
-          focusedId: result.persons[0]?.id ?? "",
+          focusedId: selectInitialFocusId(result.persons),
           warnings: result.warnings,
         });
       } else {

@@ -26,7 +26,7 @@ Open the [live demo](https://janbarry5168.github.io/family-tree/), click **Try t
 
 ```json
 [
-  { "id": "1", "name": "王大明", "gender": "male",   "father": "",  "mother": "",  "spouse": "2", "birthOrder": 1, "birthDate": "19300615", "photo": "" },
+  { "id": "1", "name": "王大明", "gender": "male",   "father": "",  "mother": "",  "spouse": "2", "birthOrder": 1, "birthDate": "19300615", "photo": "", "root": true },
   { "id": "2", "name": "林美玉", "gender": "female", "father": "",  "mother": "",  "spouse": "1", "birthOrder": 1, "birthDate": "1932",     "photo": "" },
   { "id": "3", "name": "王建國", "gender": "male",   "father": "1", "mother": "2", "spouse": "",  "birthOrder": 1, "birthDate": "19550811", "photo": "" }
 ]
@@ -43,6 +43,7 @@ Open the [live demo](https://janbarry5168.github.io/family-tree/), click **Try t
 | `birthOrder` | number, required        | Used to order siblings and resolve elder/younger terms                                               |
 | `birthDate`  | string                  | `""` (unknown), `"YYYY"` (year only), or `"YYYYMMDD"`. Legacy `birthYear` (number) is auto-migrated. |
 | `photo`      | string (URL / data URI) | Empty string renders the person's initial                                                            |
+| `root`       | boolean                 | Optional. First row with `root: true` becomes the initial focused person after loading.               |
 
 Validation rules: duplicate ids, missing required fields, and circular parent chains are blocking errors. Broken references, non-mutual spouse links, and duplicate birth orders within a sibling group are shown as warnings.
 
